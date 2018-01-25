@@ -1,2 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.smartnsoft.updatepopup"/>
+          package="com.smartnsoft.updatepopup">
+
+  <application>
+
+    <activity
+      android:name=".UpdatePopupActivity"
+    />
+
+  </application>
+
+</manifest>

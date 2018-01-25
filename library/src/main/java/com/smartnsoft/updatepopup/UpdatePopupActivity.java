@@ -1,17 +1,16 @@
 package com.smartnsoft.updatepopup;
 
 import android.content.Intent;
-import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.support.annotation.LayoutRes;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ImageView;
-import android.widget.ScrollView;
 import android.widget.TextView;
 
 import com.smartnsoft.updatepopup.bo.UpdatePopupInformations;
@@ -20,72 +19,108 @@ import com.smartnsoft.updatepopup.bo.UpdatePopupInformations;
  * @author Adrien Vitti
  * @since 2018.01.23
  */
-public final class UpdatePopupActivity
+public class UpdatePopupActivity
     extends AppCompatActivity
     implements OnClickListener
 {
 
   private static final String REMOTE_CONFIG_LATER = "remoteConfigLater";
 
-  private TextView title;
+  protected TextView title;
 
-  private TextView paragraph;
+  protected TextView paragraph;
 
-  private TextView action;
+  protected TextView action;
 
-  private TextView later;
+  protected TextView later;
 
-  private ImageView image;
+  protected ImageView close;
 
-  private ImageView close;
+  protected ImageView image;
 
-  private ScrollView scrollView;
+  protected UpdatePopupInformations updateInformation;
 
-  private String titleString;
+  @Override
+  protected final void onCreate(Bundle savedInstanceState)
+  {
+    super.onCreate(savedInstanceState);
+    setContentView(getLayoutId());
+    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
 
-  private String paragraphString;
+    title = findViewById(R.id.title);
+    paragraph = findViewById(R.id.paragraph);
 
-  private String actionButtonString;
+    action = findViewById(R.id.action_button);
+    if (action != null)
+    {
+      action.setOnClickListener(this);
+    }
 
-  private String imageUrl;
+    image = findViewById(R.id.image);
 
-  private String actionUrl;
+    later = findViewById(R.id.later);
+    if (later != null)
+    {
+      later.setOnClickListener(this);
+    }
 
-  private boolean isBlocking;
+    close = findViewById(R.id.close);
+    if (close != null)
+    {
+      close.setOnClickListener(this);
+    }
 
-  private String packageName;
+    final Bundle bundle = getIntent().getExtras();
+    if (bundle != null)
+    {
+      updateInformation = (UpdatePopupInformations) bundle.getSerializable(UpdatePopupManager.UPDATE_INFORMATION_EXTRA);
+      if (updateInformation == null)
+      {
+        finish();
+      }
+    }
 
-  private int dialogType;
+    updateLayoutWithUpdateInformation(updateInformation);
+  }
+
+  @LayoutRes
+  protected int getLayoutId()
+  {
+    return R.layout.update_popup_activity;
+  }
+
+  protected void updateLayoutWithUpdateInformation(UpdatePopupInformations updateInformation)
+  {
+    switch (updateInformation.updatePopupType)
+    {
+      case UpdatePopupManager.BLOCKING_UPDATE:
+        later.setVisibility(View.GONE);
+        close.setVisibility(View.GONE);
+        break;
+      case UpdatePopupManager.RECOMMENDED_UPDATE:
+      case UpdatePopupManager.INFORMATIVE_UPDATE:
+      default:
+        later.setVisibility(View.VISIBLE);
+        close.setVisibility(View.VISIBLE);
+        break;
+    }
+
+    setTitle(updateInformation.title);
+    setButtonLabel(updateInformation.actionButtonLabel);
+    setContent(updateInformation.content);
+    setImage(updateInformation.imageURL);
+  }
 
   @Override
   public void onClick(View view)
   {
     if (view == action)
     {
-      try
-      {
-        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + packageName)));
-      }
-      catch (android.content.ActivityNotFoundException anfe)
-      {
-        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(actionUrl)));
-      }
-      if (dialogType != 1)
-      {
-        //        AnimationUtils.animationOut(scrollView);
-        new Handler().postDelayed(new Runnable()
-        {
-          @Override
-          public void run()
-          {
-            finish();
-          }
-        }, 500);
-      }
+      onActionButtonClick(updateInformation);
     }
     else if (view == later)
     {
-      dismiss();
+      askLater();
     }
     else if (view == close)
     {
@@ -93,105 +128,19 @@ public final class UpdatePopupActivity
     }
   }
 
-  private void dismiss()
+  protected void onActionButtonClick(UpdatePopupInformations updateInformation)
   {
-    PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
-        .edit().putBoolean(UpdatePopupActivity.REMOTE_CONFIG_LATER, true).apply();
-    //    AnimationUtils.animationOut(scrollView);
-    new Handler().postDelayed(new Runnable()
+    try
     {
-      @Override
-      public void run()
-      {
-        finish();
-      }
-    }, 500);
-  }
-
-  @Override
-  protected void onCreate(Bundle savedInstanceState)
-  {
-    super.onCreate(savedInstanceState);
-    setContentView(R.layout.update_popup_activity);
-    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-
-    scrollView = findViewById(R.id.scrollContainer);
-
-    title = findViewById(R.id.title);
-
-    paragraph = findViewById(R.id.paragraph);
-
-    action = findViewById(R.id.action_button);
-    action.setOnClickListener(this);
-
-    image = findViewById(R.id.image);
-
-    later = findViewById(R.id.later);
-    later.setOnClickListener(this);
-
-    close = findViewById(R.id.close);
-    close.setOnClickListener(this);
-
-    final Bundle bundle = getIntent().getExtras();
-    if (bundle != null)
-    {
-      final UpdatePopupInformations updateInformation = bundle.getSerializable(UpdatePopupManager.UPDATE_INFORMATION_EXTRA);
-      titleString = updateInformation.title;
-      paragraphString = bundle.getString(UpdatePopupManager.REMOTE_CONFIG_CONTENT);
-      actionButtonString = bundle.getString(UpdatePopupManager.REMOTE_CONFIG_BUTTON_TEXT);
-      imageUrl = bundle.getString(UpdatePopupManager.REMOTE_CONFIG_IMAGE_URL);
-      isBlocking = bundle.getBoolean(UpdatePopupManager.REMOTE_CONFIG_IS_BLOCKING_UPDATE);
-      actionUrl = bundle.getString(UpdatePopupManager.REMOTE_CONFIG_ACTION_URL);
-      packageName = bundle.getString(UpdatePopupManager.REMOTE_CONFIG_PACKAGE_NAME_FOR_UPDATE);
-      dialogType = (int) bundle.getLong(UpdatePopupManager.REMOTE_CONFIG_DIALOG_TYPE);
+      startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + updateInformation.packageName)));
     }
-
-  }
-
-  @Override
-  protected void onResume()
-  {
-    super.onResume();
-    //    new Handler().postDelayed(new Runnable()
-    //    {
-    //      @Override
-    //      public void run()
-    //      {
-    //        AnimationUtils.animationIn(scrollView);
-    //      }
-    //    }, 500);
-
-    if (dialogType > 0)
+    catch (android.content.ActivityNotFoundException anfe)
     {
-      switch (dialogType)
-      {
-        case 1:
-          later.setVisibility(View.GONE);
-          close.setVisibility(View.GONE);
-          break;
-        default:
-          later.setVisibility(View.VISIBLE);
-          close.setVisibility(View.VISIBLE);
-          break;
-      }
+      startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(updateInformation.deepLink)));
     }
-
-    if (TextUtils.isEmpty(titleString) == false)
+    if (updateInformation.updatePopupType != UpdatePopupManager.BLOCKING_UPDATE)
     {
-      title.setText(titleString);
-    }
-    if (TextUtils.isEmpty(imageUrl) == false)
-    {
-      //      BitmapDownloader.getInstance().get(image, imageUrl, null, getHandler(), LCIApplication.CACHE_IMAGE_INSTRUCTIONS);
-    }
-    if (TextUtils.isEmpty(actionButtonString) == false)
-    {
-      action.setText(actionButtonString);
-    }
-    if (TextUtils.isEmpty(paragraphString) == false)
-    {
-      paragraph.setText(paragraphString);
+      finish();
     }
   }
 
@@ -200,6 +149,50 @@ public final class UpdatePopupActivity
   {
     super.onPause();
     overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+  }
+
+  protected void dismiss()
+  {
+    finish();
+  }
+
+  protected void askLater()
+  {
+    PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
+        .edit().putBoolean(UpdatePopupActivity.REMOTE_CONFIG_LATER, true).apply();
+    finish();
+  }
+
+  protected void setTitle(@Nullable final String titleFromRemoteConfig)
+  {
+    if (TextUtils.isEmpty(titleFromRemoteConfig) == false)
+    {
+      title.setText(titleFromRemoteConfig);
+    }
+  }
+
+  protected void setContent(@Nullable final String contentFromRemoteConfig)
+  {
+    if (TextUtils.isEmpty(contentFromRemoteConfig) == false)
+    {
+      paragraph.setText(contentFromRemoteConfig);
+    }
+  }
+
+  protected void setButtonLabel(@Nullable final String buttonLabelFromRemoteConfig)
+  {
+    if (TextUtils.isEmpty(buttonLabelFromRemoteConfig) == false)
+    {
+      action.setText(buttonLabelFromRemoteConfig);
+    }
+  }
+
+  protected void setImage(@Nullable final String imageURLFromRemoteConfig)
+  {
+    if (TextUtils.isEmpty(imageURLFromRemoteConfig) == false)
+    {
+      //      BitmapDownloader.getInstance().get(image, imageUrl, null, getHandler(), LCIApplication.CACHE_IMAGE_INSTRUCTIONS);
+    }
   }
 
 }

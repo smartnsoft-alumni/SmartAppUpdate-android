@@ -5,9 +5,11 @@ import java.lang.annotation.RetentionPolicy;
 
 import android.content.Context;
 import android.content.Intent;
+import android.support.annotation.AnyThread;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
-import android.text.TextUtils;
+import android.support.annotation.WorkerThread;
+import android.util.Log;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -16,68 +18,121 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 import com.smartnsoft.updatepopup.bo.UpdatePopupInformations;
 
 /**
- * The class description here.
- *
  * @author Adrien Vitti
  * @since 2018.01.23
  */
-
+@SuppressWarnings("unused")
 public final class UpdatePopupManager
     implements OnCompleteListener<Void>
 {
 
   @Retention(RetentionPolicy.SOURCE)
-  @IntDef({ Informative, Recommended, Blocking })
+  @IntDef({ INFORMATIVE_UPDATE, RECOMMENDED_UPDATE, BLOCKING_UPDATE })
   public @interface UpdatePopupType {}
 
-  static boolean isUpdateTypeKnown(long updateType)
+  private static boolean isUpdateTypeKnown(long updateType)
   {
-    return updateType == Informative
-        || updateType == Recommended
-        || updateType == Blocking;
+    return updateType == INFORMATIVE_UPDATE
+        || updateType == RECOMMENDED_UPDATE
+        || updateType == BLOCKING_UPDATE;
   }
 
-  static final int Informative = 1;
+  public static class Builder
+  {
 
-  static final int Recommended = 2;
+    final UpdatePopupManager updatePopupManager;
 
-  static final int Blocking = 3;
+    public Builder(@NonNull Context context, boolean isInDevelopmentMode)
+    {
+      this.updatePopupManager = new UpdatePopupManager(context, isInDevelopmentMode);
+    }
 
-  static final String REMOTE_CONFIG_TITLE = "title";
+    public Builder setUpdatePopupActivity(Class<? extends UpdatePopupActivity> updatePopupActivity)
+    {
+      updatePopupManager.setUpdatePopupActivityClass(updatePopupActivity);
+      return this;
+    }
 
-  static final String REMOTE_CONFIG_IMAGE_URL = "image";
+    public Builder setUpdatePopupActivity(long synchronousTimeoutInMilliseconds)
+    {
+      if (synchronousTimeoutInMilliseconds <= 0)
+      {
+        throw new IllegalArgumentException("Timeout cannot be lower or equal to 0");
+      }
+      updatePopupManager.setSynchronousTimeoutInMillisecond(synchronousTimeoutInMilliseconds);
+      return this;
+    }
 
-  static final String REMOTE_CONFIG_CONTENT = "content";
+    public UpdatePopupManager build()
+    {
+      return this.updatePopupManager;
+    }
+  }
 
-  static final String REMOTE_CONFIG_BUTTON_TEXT = "actionButton";
+  static final int INFORMATIVE_UPDATE = 1;
+
+  static final int RECOMMENDED_UPDATE = 2;
+
+  static final int BLOCKING_UPDATE = 3;
+
+  private static final long SYNCHRONISATION_TIMEOUT_IN_MILLISECONDS = 60 * 1000;
+
+  private static final String TAG = "UpdatePopupManager";
+
+  private static final String REMOTE_CONFIG_TITLE = "title";
+
+  private static final String REMOTE_CONFIG_IMAGE_URL = "image";
+
+  private static final String REMOTE_CONFIG_CONTENT = "content";
+
+  private static final String REMOTE_CONFIG_BUTTON_TEXT = "actionButton";
 
   private static final String REMOTE_CONFIG_UPDATE_NEEDED = "update_needed";
 
-  static final String REMOTE_CONFIG_IS_BLOCKING_UPDATE = "is_blocking_update";
+  private static final String REMOTE_CONFIG_IS_BLOCKING_UPDATE = "is_blocking_update";
 
-  static final String REMOTE_CONFIG_ACTION_URL = "deeplinkAndroid";
+  private static final String REMOTE_CONFIG_ACTION_URL = "deeplink";
 
-  static final String REMOTE_CONFIG_PACKAGE_NAME_FOR_UPDATE = "package_name_for_update";
+  private static final String REMOTE_CONFIG_PACKAGE_NAME_FOR_UPDATE = "package_name_for_update";
 
-  static final String REMOTE_CONFIG_DIALOG_TYPE = "dialogType";
+  private static final String REMOTE_CONFIG_DIALOG_TYPE = "dialogType";
 
   static final String UPDATE_INFORMATION_EXTRA = "updateInformationExtra";
 
   private final FirebaseRemoteConfig firebaseRemoteConfig;
 
+  private final boolean isInDevelopmentMode;
+
   private final Context applicationContext;
 
-  public UpdatePopupManager(@NonNull Context context, final boolean isInDevelopmentMode)
+  private Class<? extends UpdatePopupActivity> updatePopupActivityClass = UpdatePopupActivity.class;
+
+  private long synchronousTimeoutInMillisecond = UpdatePopupManager.SYNCHRONISATION_TIMEOUT_IN_MILLISECONDS;
+
+  private UpdatePopupManager(@NonNull Context context, final boolean isInDevelopmentMode)
   {
     this.applicationContext = context.getApplicationContext();
     firebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
+    this.isInDevelopmentMode = isInDevelopmentMode;
     FirebaseRemoteConfigSettings configSettings = new FirebaseRemoteConfigSettings.Builder()
         .setDeveloperModeEnabled(isInDevelopmentMode)
         .build();
     firebaseRemoteConfig.setConfigSettings(configSettings);
   }
 
-  protected void fetchRemoteConfig()
+  void setUpdatePopupActivityClass(
+      Class<? extends UpdatePopupActivity> updatePopupActivityClass)
+  {
+    this.updatePopupActivityClass = updatePopupActivityClass;
+  }
+
+  void setSynchronousTimeoutInMillisecond(long synchronousTimeoutInMillisecond)
+  {
+    this.synchronousTimeoutInMillisecond = synchronousTimeoutInMillisecond;
+  }
+
+  @AnyThread
+  public void fetchRemoteConfig()
   {
     if (firebaseRemoteConfig != null)
     {
@@ -97,32 +152,99 @@ public final class UpdatePopupManager
   {
     if (task.isSuccessful())
     {
-      firebaseRemoteConfig.activateFetched();
+      onUpdateSucessful();
+    }
+  }
 
-      /**
-       * Add Logic for the remote config :
-       * is update needed
-       * is update blocking
-       * is information about features
-       */
+  private void onUpdateSucessful()
+  {
+    firebaseRemoteConfig.activateFetched();
+    /*
+     * Add Logic for the remote config :
+     * is update needed
+     * is update blocking
+     * is information about features
+     */
 
-      final UpdatePopupInformations updatePopupInformations = new UpdatePopupInformations(firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_TITLE),
-          firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_IMAGE_URL),
-          firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_CONTENT),
-          firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_BUTTON_TEXT),
-          firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_ACTION_URL),
-          firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_PACKAGE_NAME_FOR_UPDATE),
-          (int) firebaseRemoteConfig.getLong(UpdatePopupManager.REMOTE_CONFIG_DIALOG_TYPE));
+    final UpdatePopupInformations updatePopupInformations = new UpdatePopupInformations(firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_TITLE),
+        firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_IMAGE_URL),
+        firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_CONTENT),
+        firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_BUTTON_TEXT),
+        firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_ACTION_URL),
+        firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_PACKAGE_NAME_FOR_UPDATE),
+        (int) firebaseRemoteConfig.getLong(UpdatePopupManager.REMOTE_CONFIG_DIALOG_TYPE));
 
-      if (TextUtils.isEmpty(firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_TITLE)) == false && isUpdateTypeKnown(updatePopupInformations.updatePopupType))
+    final boolean isUpdateTypeKnown = isUpdateTypeKnown(updatePopupInformations.updatePopupType);
+    if (isInDevelopmentMode)
+    {
+      Log.d(TAG, "UpdateType=" + updatePopupInformations.updatePopupType + " which can" + (isUpdateTypeKnown ? "" : "not ") + " be processed");
+    }
+    if (isUpdateTypeKnown)
+    {
+      final Intent intent = new Intent(applicationContext, updatePopupActivityClass);
+      intent.putExtra(UpdatePopupManager.UPDATE_INFORMATION_EXTRA, updatePopupInformations);
+      applicationContext.startActivity(intent);
+    }
+  }
+
+  @WorkerThread
+  public void fetchRemoteConfigSync()
+  {
+    if (firebaseRemoteConfig != null)
+    {
+      final Object mutex = new Object();
+      long cacheExpiration = 3600; // 1 hour in seconds.
+      // If your app is using developer mode, cacheExpiration is set to 0, so each fetch will
+      // retrieve values from the service.
+      if (firebaseRemoteConfig.getInfo().getConfigSettings().isDeveloperModeEnabled())
       {
-        final Intent intent = new Intent(applicationContext, UpdatePopupActivity.class);
-        intent.putExtra(UpdatePopupManager.REMOTE_CONFIG_UPDATE_NEEDED, firebaseRemoteConfig.getBoolean(UpdatePopupManager.REMOTE_CONFIG_UPDATE_NEEDED));
-        intent.putExtra(UpdatePopupManager.REMOTE_CONFIG_IS_BLOCKING_UPDATE, firebaseRemoteConfig.getBoolean(UpdatePopupManager.REMOTE_CONFIG_IS_BLOCKING_UPDATE));
-        intent.putExtra(UpdatePopupManager.UPDATE_INFORMATION_EXTRA, updatePopupInformations);
-        applicationContext.startActivity(intent);
+        cacheExpiration = 0;
+      }
+
+      final long startTime = System.currentTimeMillis();
+      firebaseRemoteConfig.fetch(cacheExpiration).addOnCompleteListener(new OnCompleteListener<Void>()
+      {
+        @Override
+        public void onComplete(@NonNull Task<Void> task)
+        {
+          if (isInDevelopmentMode)
+          {
+            Log.d(TAG, "Synchronous Remote Config retrieving task took " + (System.currentTimeMillis() - startTime) + "ms");
+          }
+          if (task.isSuccessful())
+          {
+            onUpdateSucessful();
+          }
+          else
+          {
+            if (isInDevelopmentMode)
+            {
+              Log.w(TAG, "Synchronous Remote Config retrieving task has failed");
+            }
+          }
+          synchronized (mutex)
+          {
+            mutex.notify();
+          }
+        }
+      });
+
+      try
+      {
+        synchronized (mutex)
+        {
+          mutex.wait(synchronousTimeoutInMillisecond);
+        }
+      }
+      catch (InterruptedException exception)
+      {
+        if (isInDevelopmentMode)
+        {
+          Log.w(TAG, "An interruption was caught when retrieving remote config synchronously", exception);
+        }
       }
     }
   }
+
 
 }

@@ -1,6 +1,7 @@
 package com.smartnsoft.updatepopup;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -23,8 +24,6 @@ public class UpdatePopupActivity
     extends AppCompatActivity
     implements OnClickListener
 {
-
-  private static final String REMOTE_CONFIG_LATER = "remoteConfigLater";
 
   protected TextView title;
 
@@ -98,7 +97,7 @@ public class UpdatePopupActivity
         close.setVisibility(View.GONE);
         break;
       case UpdatePopupManager.RECOMMENDED_UPDATE:
-      case UpdatePopupManager.INFORMATIVE_UPDATE:
+      case UpdatePopupManager.INFORMATION_ABOUT_UPDATE:
       default:
         later.setVisibility(View.VISIBLE);
         close.setVisibility(View.VISIBLE);
@@ -158,8 +157,8 @@ public class UpdatePopupActivity
 
   protected void askLater()
   {
-    PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
-        .edit().putBoolean(UpdatePopupActivity.REMOTE_CONFIG_LATER, true).apply();
+    final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+    UpdatePopupManager.setUpdateLaterTimestamp(sharedPreferences, System.currentTimeMillis());
     finish();
   }
 
@@ -189,10 +188,6 @@ public class UpdatePopupActivity
 
   protected void setImage(@Nullable final String imageURLFromRemoteConfig)
   {
-    if (TextUtils.isEmpty(imageURLFromRemoteConfig) == false)
-    {
-      //      BitmapDownloader.getInstance().get(image, imageUrl, null, getHandler(), LCIApplication.CACHE_IMAGE_INSTRUCTIONS);
-    }
   }
 
 }

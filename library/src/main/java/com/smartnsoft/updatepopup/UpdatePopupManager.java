@@ -5,8 +5,11 @@ import java.lang.annotation.RetentionPolicy;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.support.annotation.AnyThread;
 import android.support.annotation.IntDef;
+import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 import android.support.annotation.WorkerThread;
 import android.util.Log;
@@ -14,6 +17,7 @@ import android.util.Log;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 import com.smartnsoft.updatepopup.bo.UpdatePopupInformations;
 
@@ -23,16 +27,25 @@ import com.smartnsoft.updatepopup.bo.UpdatePopupInformations;
  */
 @SuppressWarnings("unused")
 public final class UpdatePopupManager
-    implements OnCompleteListener<Void>
 {
 
   @Retention(RetentionPolicy.SOURCE)
-  @IntDef({ INFORMATIVE_UPDATE, RECOMMENDED_UPDATE, BLOCKING_UPDATE })
+  @IntDef({ INFORMATION_ABOUT_UPDATE, RECOMMENDED_UPDATE, BLOCKING_UPDATE })
   public @interface UpdatePopupType {}
+
+  public static void setUpdateLaterTimestamp(@NonNull SharedPreferences preferences, long updateLaterTimestamp)
+  {
+    preferences.edit().putLong(UpdatePopupManager.LAST_UPDATE_POPUP_CLICK_ON_LATER_TIMESTAMP_PREFERENCE_KEY, updateLaterTimestamp).apply();
+  }
+
+  public static long getUpdateLaterTimestamp(@NonNull SharedPreferences preferences)
+  {
+    return preferences.getLong(UpdatePopupManager.LAST_UPDATE_POPUP_CLICK_ON_LATER_TIMESTAMP_PREFERENCE_KEY, -1);
+  }
 
   private static boolean isUpdateTypeKnown(long updateType)
   {
-    return updateType == INFORMATIVE_UPDATE
+    return updateType == INFORMATION_ABOUT_UPDATE
         || updateType == RECOMMENDED_UPDATE
         || updateType == BLOCKING_UPDATE;
   }
@@ -47,13 +60,13 @@ public final class UpdatePopupManager
       this.updatePopupManager = new UpdatePopupManager(context, isInDevelopmentMode);
     }
 
-    public Builder setUpdatePopupActivity(Class<? extends UpdatePopupActivity> updatePopupActivity)
+    public Builder setUpdatePopupActivity(@NonNull Class<? extends UpdatePopupActivity> updatePopupActivity)
     {
       updatePopupManager.setUpdatePopupActivityClass(updatePopupActivity);
       return this;
     }
 
-    public Builder setUpdatePopupActivity(long synchronousTimeoutInMilliseconds)
+    public Builder setSynchronousTimeoutDuration(@IntRange(from = 1) long synchronousTimeoutInMilliseconds)
     {
       if (synchronousTimeoutInMilliseconds <= 0)
       {
@@ -63,19 +76,44 @@ public final class UpdatePopupManager
       return this;
     }
 
+    public Builder setMaxConfigCacheDuration(@IntRange(from = 1) long maxConfigCacheDurationInMillisecond)
+    {
+      if (maxConfigCacheDurationInMillisecond <= 0)
+      {
+        throw new IllegalArgumentException("Cache expiration duration cannot be lower or equal to 0");
+      }
+      updatePopupManager.setMaxRemoteConfigCacheInMillisecond(maxConfigCacheDurationInMillisecond);
+      return this;
+    }
+
+    public Builder setMinimumTimeBetweenTwoRecommendedPopup(
+        @IntRange(from = 1) long minimumTimeBetweenTwoRecommendedPopupInMilliseconds)
+    {
+      if (minimumTimeBetweenTwoRecommendedPopupInMilliseconds <= 0)
+      {
+        throw new IllegalArgumentException("Time between two popup must be higher than 0");
+      }
+      updatePopupManager.setMinimumTimeBetweenTwoRecommendedPopupInMilliseconds(minimumTimeBetweenTwoRecommendedPopupInMilliseconds);
+      return this;
+    }
+
     public UpdatePopupManager build()
     {
       return this.updatePopupManager;
     }
   }
 
-  static final int INFORMATIVE_UPDATE = 1;
+  static final int INFORMATION_ABOUT_UPDATE = 1;
 
   static final int RECOMMENDED_UPDATE = 2;
 
   static final int BLOCKING_UPDATE = 3;
 
   private static final long SYNCHRONISATION_TIMEOUT_IN_MILLISECONDS = 60 * 1000;
+
+  private static final long MAXIMUM_CACHE_RETENTION_FOR_REMOTE_CONFIG_IN_MILLISECONS = 24 * 60 * 60 * 1000;
+
+  private static final long MINIMUM_TIME_BETWEEN_TWO_RECOMMENDED_POPUP_IN_MILLISECONS = 3 * 24 * 60 * 60 * 1000;
 
   private static final String TAG = "UpdatePopupManager";
 
@@ -99,6 +137,8 @@ public final class UpdatePopupManager
 
   static final String UPDATE_INFORMATION_EXTRA = "updateInformationExtra";
 
+  private static final String LAST_UPDATE_POPUP_CLICK_ON_LATER_TIMESTAMP_PREFERENCE_KEY = "lastUpdatePopupClickOnLaterTimestamp";
+
   private final FirebaseRemoteConfig firebaseRemoteConfig;
 
   private final boolean isInDevelopmentMode;
@@ -108,6 +148,10 @@ public final class UpdatePopupManager
   private Class<? extends UpdatePopupActivity> updatePopupActivityClass = UpdatePopupActivity.class;
 
   private long synchronousTimeoutInMillisecond = UpdatePopupManager.SYNCHRONISATION_TIMEOUT_IN_MILLISECONDS;
+
+  private long maxConfigCacheDurationInMillisecond = UpdatePopupManager.MAXIMUM_CACHE_RETENTION_FOR_REMOTE_CONFIG_IN_MILLISECONS;
+
+  private long minimumTimeBetweenTwoRecommendedPopupInMilliseconds = UpdatePopupManager.MINIMUM_TIME_BETWEEN_TWO_RECOMMENDED_POPUP_IN_MILLISECONS;
 
   private UpdatePopupManager(@NonNull Context context, final boolean isInDevelopmentMode)
   {
@@ -131,6 +175,16 @@ public final class UpdatePopupManager
     this.synchronousTimeoutInMillisecond = synchronousTimeoutInMillisecond;
   }
 
+  void setMaxRemoteConfigCacheInMillisecond(long maxConfigCacheDurationInMillisecond)
+  {
+    this.maxConfigCacheDurationInMillisecond = maxConfigCacheDurationInMillisecond;
+  }
+
+  void setMinimumTimeBetweenTwoRecommendedPopupInMilliseconds(long minimumTimeBetweenTwoRecommendedPopupInMilliseconds)
+  {
+    this.minimumTimeBetweenTwoRecommendedPopupInMilliseconds = minimumTimeBetweenTwoRecommendedPopupInMilliseconds;
+  }
+
   @AnyThread
   public void fetchRemoteConfig()
   {
@@ -143,29 +197,28 @@ public final class UpdatePopupManager
       {
         cacheExpiration = 0;
       }
-      firebaseRemoteConfig.fetch(cacheExpiration).addOnCompleteListener(this);
-    }
-  }
-
-  @Override
-  public void onComplete(@NonNull Task<Void> task)
-  {
-    if (task.isSuccessful())
-    {
-      onUpdateSucessful();
+      firebaseRemoteConfig.fetch(cacheExpiration).addOnCompleteListener(new OnCompleteListener<Void>()
+      {
+        @Override
+        public void onComplete(@NonNull Task<Void> task)
+        {
+          if (task.isSuccessful())
+          {
+            onUpdateSucessful();
+          }
+        }
+      });
     }
   }
 
   private void onUpdateSucessful()
   {
     firebaseRemoteConfig.activateFetched();
-    /*
-     * Add Logic for the remote config :
-     * is update needed
-     * is update blocking
-     * is information about features
-     */
+    createAndDisplayPopup();
+  }
 
+  private void createAndDisplayPopup()
+  {
     final UpdatePopupInformations updatePopupInformations = new UpdatePopupInformations(firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_TITLE),
         firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_IMAGE_URL),
         firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_CONTENT),
@@ -179,11 +232,24 @@ public final class UpdatePopupManager
     {
       Log.d(TAG, "UpdateType=" + updatePopupInformations.updatePopupType + " which can" + (isUpdateTypeKnown ? "" : "not ") + " be processed");
     }
+
     if (isUpdateTypeKnown)
     {
-      final Intent intent = new Intent(applicationContext, updatePopupActivityClass);
-      intent.putExtra(UpdatePopupManager.UPDATE_INFORMATION_EXTRA, updatePopupInformations);
-      applicationContext.startActivity(intent);
+      if (updatePopupInformations.updatePopupType == BLOCKING_UPDATE
+          ||
+          (updatePopupInformations.updatePopupType == RECOMMENDED_UPDATE
+              && UpdatePopupManager.getUpdateLaterTimestamp(PreferenceManager.getDefaultSharedPreferences(applicationContext)) + minimumTimeBetweenTwoRecommendedPopupInMilliseconds > System.currentTimeMillis())
+          ||
+          //          (
+          updatePopupInformations.updatePopupType == INFORMATION_ABOUT_UPDATE
+        //TODO: Add condition to check if a changelog message (Informative type) has already been seen and to show it ONLY if it's an update
+        //          && UpdatePopupManager.getCurrentVersionCode(PreferenceManager.getDefaultSharedPreferences(applicationContext)))
+          )
+      {
+        final Intent intent = new Intent(applicationContext, updatePopupActivityClass);
+        intent.putExtra(UpdatePopupManager.UPDATE_INFORMATION_EXTRA, updatePopupInformations);
+        applicationContext.startActivity(intent);
+      }
     }
   }
 
@@ -246,5 +312,19 @@ public final class UpdatePopupManager
     }
   }
 
+  public void reShowUpdatePopupIfNeeded()
+  {
+    final FirebaseRemoteConfigInfo firebaseRemoteConfigInfo = firebaseRemoteConfig.getInfo();
+    if (firebaseRemoteConfigInfo.getLastFetchStatus() == FirebaseRemoteConfig.LAST_FETCH_STATUS_SUCCESS
+        && firebaseRemoteConfigInfo.getFetchTimeMillis() >= System.currentTimeMillis() - maxConfigCacheDurationInMillisecond)
+    {
+      createAndDisplayPopup();
+    }
+    else if (firebaseRemoteConfigInfo.getLastFetchStatus() != FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED)
+    {
+      // need to refetch
+      fetchRemoteConfig();
+    }
+  }
 
 }

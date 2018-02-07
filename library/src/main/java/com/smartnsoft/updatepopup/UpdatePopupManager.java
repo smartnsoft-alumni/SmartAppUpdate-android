@@ -212,7 +212,7 @@ public final class UpdatePopupManager
   }
 
   @AnyThread
-  public void fetchRemoteConfig()
+  public void fetchRemoteConfig(final boolean shouldShowPopupAfterFetch)
   {
     if (firebaseRemoteConfig != null)
     {
@@ -230,17 +230,20 @@ public final class UpdatePopupManager
         {
           if (task.isSuccessful())
           {
-            onUpdateSucessful();
+            onUpdateSucessful(shouldShowPopupAfterFetch);
           }
         }
       });
     }
   }
 
-  private void onUpdateSucessful()
+  private void onUpdateSucessful(final boolean shouldShowPopupAfterFetch)
   {
     firebaseRemoteConfig.activateFetched();
-    createAndDisplayPopup();
+    if (shouldShowPopupAfterFetch)
+    {
+      createAndDisplayPopup();
+    }
   }
 
   private void createAndDisplayPopup()
@@ -291,7 +294,7 @@ public final class UpdatePopupManager
   }
 
   @WorkerThread
-  public void fetchRemoteConfigSync()
+  public void fetchRemoteConfigSync(final boolean shouldShowPopupAfterFetch)
   {
     if (firebaseRemoteConfig != null)
     {
@@ -316,7 +319,7 @@ public final class UpdatePopupManager
           }
           if (task.isSuccessful())
           {
-            onUpdateSucessful();
+            onUpdateSucessful(shouldShowPopupAfterFetch);
           }
           else
           {
@@ -360,7 +363,7 @@ public final class UpdatePopupManager
     else if (firebaseRemoteConfigInfo.getLastFetchStatus() != FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED)
     {
       // need to refetch
-      fetchRemoteConfig();
+      fetchRemoteConfig(true);
     }
   }
 

@@ -19,6 +19,6 @@ class MainActivity : AppCompatActivity()
         .setUpdatePopupActivity(CustomUpdatePopupActivity::class.java)
         .build();
 
-    updatePopupManager.fetchRemoteConfig()
+    updatePopupManager.fetchRemoteConfig(true)
   }
 }

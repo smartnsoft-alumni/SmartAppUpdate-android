@@ -67,7 +67,7 @@ public class UpdatePopupActivity
     title = findViewById(R.id.title);
     paragraph = findViewById(R.id.paragraph);
 
-    action = findViewById(R.id.action_button);
+    action = findViewById(R.id.actionButton);
     if (action != null)
     {
       action.setOnClickListener(this);
@@ -75,13 +75,13 @@ public class UpdatePopupActivity
 
     image = findViewById(R.id.image);
 
-    later = findViewById(R.id.later);
+    later = findViewById(R.id.laterButton);
     if (later != null)
     {
       later.setOnClickListener(this);
     }
 
-    close = findViewById(R.id.close);
+    close = findViewById(R.id.closeButton);
     if (close != null)
     {
       close.setOnClickListener(this);

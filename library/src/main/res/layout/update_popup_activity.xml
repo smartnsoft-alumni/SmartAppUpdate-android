@@ -10,10 +10,8 @@
 >
   <RelativeLayout
     android:orientation="vertical"
-    android:layout_height="wrap_content"
-    android:layout_gravity="center"
-    android:gravity="center"
     android:layout_centerInParent="true"
+    android:layout_gravity="center"
     android:layout_marginBottom="15dip"
     android:layout_marginEnd="20dip"
     android:layout_marginLeft="20dip"
@@ -21,143 +19,151 @@
     android:layout_marginStart="20dip"
     android:background="@drawable/white_card_background"
     android:elevation="2dip"
+    android:gravity="center"
     style="@style/UpdateCardStyle"
   >
 
-    <ScrollView
+    <android.support.constraint.ConstraintLayout
+      android:orientation="vertical"
       android:layout_width="match_parent"
-      android:layout_height="wrap_content">
+      android:layout_height="match_parent"
+      android:layout_below="@id/closeButton"
+      android:layout_gravity="center">
 
-      <android.support.constraint.ConstraintLayout
-        android:orientation="vertical"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/close"
-        android:layout_gravity="center">
+      <TextView
+        android:id="@+id/title"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_gravity="center_horizontal"
+        android:gravity="center_horizontal"
+        android:text="@string/update_title"
+        android:textColor="@color/dark_pink"
+        android:textSize="22sp"
+        app:layout_constraintHeight_default="wrap"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+      />
 
-        <TextView
-          android:id="@+id/title"
-          android:layout_width="0dp"
-          android:layout_height="0dp"
-          android:layout_gravity="center_horizontal"
-          android:layout_marginTop="20dip"
-          android:gravity="center_horizontal"
-          android:text="@string/update_title"
-          android:textColor="@color/dark_pink"
-          android:textSize="22sp"
-          app:layout_constraintBottom_toTopOf="@id/image"
-          app:layout_constraintHeight_default="wrap"
-          app:layout_constraintLeft_toLeftOf="parent"
-          app:layout_constraintRight_toRightOf="parent"
-          app:layout_constraintTop_toTopOf="parent"
-          app:layout_constraintVertical_chainStyle="packed"
-        />
+      <!-- This LinearLayout is needed to vertically center the scrollview -->
+      <LinearLayout
+        android:id="@+id/contentLayout"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginBottom="10dip"
+        android:layout_marginTop="10dip"
+        app:layout_constraintBottom_toTopOf="@+id/actionButton"
+        app:layout_constraintHeight_default="spread"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/title"
+        app:layout_constraintWidth_default="spread"
+      >
+        <ScrollView
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_gravity="center_vertical"
+          android:overScrollMode="never"
+        >
+          <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingBottom="10dip"
+            android:paddingTop="10dip"
+          >
+            <ImageView
+              android:id="@+id/image"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:adjustViewBounds="true"
+              android:minHeight="150dp"
+              android:visibility="gone"
+              tools:background="@color/blue"
+              tools:visibility="visible"
+            />
 
-        <ImageView
-          android:id="@+id/image"
-          android:layout_width="0dp"
-          android:layout_height="0dp"
-          android:layout_marginTop="40dip"
-          android:adjustViewBounds="true"
-          android:visibility="gone"
-          app:layout_constraintBottom_toTopOf="@id/paragraph"
-          app:layout_constraintHeight_default="wrap"
-          app:layout_constraintHeight_min="150dip"
-          app:layout_constraintLeft_toLeftOf="parent"
-          app:layout_constraintRight_toRightOf="parent"
-          app:layout_constraintTop_toBottomOf="@id/title"
-          app:layout_constraintWidth_default="spread"
-          tools:background="@color/blue"
-          tools:src="@drawable/ic_close"
-          tools:visibility="visible"
-        />
+            <TextView
+              android:id="@+id/paragraph"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:layout_gravity="center_horizontal"
+              android:layout_marginEnd="10dip"
+              android:layout_marginLeft="10dip"
+              android:layout_marginRight="10dip"
+              android:layout_marginStart="10dip"
+              android:layout_marginTop="0dp"
+              android:gravity="center_horizontal"
+              android:padding="10dip"
+              android:text="@string/update_content"
+              android:textColor="@color/very_dark_gray"
+              android:textSize="15sp"
+              tools:text="@tools:sample/lorem/random"
+              tools:textSize="25sp"
+            />
+          </LinearLayout>
+        </ScrollView>
+      </LinearLayout>
 
-        <TextView
-          android:id="@+id/paragraph"
-          android:layout_width="0dp"
-          android:layout_height="0dp"
-          android:layout_gravity="center_horizontal"
-          android:layout_marginEnd="10dip"
-          android:layout_marginLeft="10dip"
-          android:layout_marginRight="10dip"
-          android:layout_marginStart="10dip"
-          android:layout_marginTop="0dp"
-          android:gravity="center_horizontal"
-          android:padding="10dip"
-          android:text="@string/update_content"
-          android:textColor="@color/very_dark_gray"
-          android:textSize="15sp"
-          app:layout_constraintBottom_toTopOf="@id/action_button"
-          app:layout_constraintHeight_default="wrap"
-          app:layout_constraintLeft_toLeftOf="parent"
-          app:layout_constraintRight_toRightOf="parent"
-          app:layout_constraintTop_toBottomOf="@id/image"
-          app:layout_goneMarginTop="40dp"
-        />
-        <!--tools:text="@tools:sample/lorem/random"-->
+      <TextView
+        android:id="@+id/actionButton"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="20dip"
+        android:layout_marginEnd="20dip"
+        android:layout_marginLeft="20dip"
+        android:layout_marginRight="20dip"
+        android:layout_marginStart="20dip"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/blue_rnd_btn"
+        android:gravity="center_horizontal"
+        android:paddingBottom="15dip"
+        android:paddingEnd="70dp"
+        android:paddingLeft="70dp"
+        android:paddingRight="70dp"
+        android:paddingStart="70dp"
+        android:paddingTop="15dip"
+        android:text="@string/update_button_label"
+        android:textColor="@color/white"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toTopOf="@+id/laterButton"
+        app:layout_constraintHeight_default="wrap"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+      />
 
-        <TextView
-          android:id="@+id/action_button"
-          android:layout_width="0dp"
-          android:layout_height="0dp"
-          android:layout_gravity="center_horizontal"
-          android:layout_marginBottom="20dip"
-          android:layout_marginEnd="20dip"
-          android:layout_marginLeft="20dip"
-          android:layout_marginRight="20dip"
-          android:layout_marginStart="20dip"
-          android:layout_marginTop="20dp"
-          android:background="@drawable/blue_rnd_btn"
-          android:gravity="center_horizontal"
-          android:paddingBottom="15dip"
-          android:paddingEnd="70dp"
-          android:paddingLeft="70dp"
-          android:paddingRight="70dp"
-          android:paddingStart="70dp"
-          android:paddingTop="15dip"
-          android:text="@string/update_button_label"
-          android:textColor="@color/white"
-          android:textSize="18sp"
-          app:layout_constraintBottom_toTopOf="@id/later"
-          app:layout_constraintHeight_default="wrap"
-          app:layout_constraintLeft_toLeftOf="parent"
-          app:layout_constraintRight_toRightOf="parent"
-          app:layout_constraintTop_toBottomOf="@id/paragraph"
-        />
-
-        <TextView
-          android:id="@+id/later"
-          android:layout_width="0dp"
-          android:layout_height="0dp"
-          android:layout_gravity="center_horizontal"
-          android:layout_marginBottom="10dip"
-          android:layout_marginTop="5dip"
-          android:gravity="center_horizontal"
-          android:padding="15dip"
-          android:text="@string/later"
-          android:textColor="@color/very_dark_gray"
-          android:visibility="gone"
-          app:layout_constraintBottom_toBottomOf="parent"
-          app:layout_constraintHeight_default="wrap"
-          app:layout_constraintLeft_toLeftOf="@id/action_button"
-          app:layout_constraintRight_toRightOf="@id/action_button"
-          app:layout_constraintTop_toBottomOf="@id/action_button"
-        />
-      </android.support.constraint.ConstraintLayout>
-    </ScrollView>
+      <TextView
+        android:id="@+id/laterButton"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="10dip"
+        android:layout_marginTop="5dip"
+        android:gravity="center_horizontal"
+        android:padding="15dip"
+        android:text="@string/later"
+        android:textColor="@color/very_dark_gray"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHeight_default="wrap"
+        app:layout_constraintLeft_toLeftOf="@id/actionButton"
+        app:layout_constraintRight_toRightOf="@id/actionButton"
+      />
+    </android.support.constraint.ConstraintLayout>
 
     <ImageView
-      android:id="@+id/close"
-      android:layout_width="18dip"
-      android:layout_height="18dip"
+      android:id="@+id/closeButton"
+      android:layout_width="50dip"
+      android:layout_height="50dip"
       android:layout_alignParentEnd="true"
       android:layout_alignParentRight="true"
       android:layout_gravity="end"
-      android:layout_margin="20dip"
+      android:padding="15dip"
       android:src="@drawable/ic_close"
       android:tint="@color/gray"
       android:visibility="gone"
+      tools:visibility="visible"
     />
-
   </RelativeLayout>
 </RelativeLayout>

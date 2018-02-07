@@ -1,6 +1,7 @@
 package com.smartnsoft.updatepopupsample;
 
 import android.support.annotation.Nullable;
+import android.text.Html;
 import android.text.TextUtils;
 import android.view.View;
 
@@ -23,6 +24,15 @@ public final class CustomUpdatePopupActivity
     {
       image.setVisibility(View.VISIBLE);
       Glide.with(this).load(imageURLFromRemoteConfig).into(image);
+    }
+  }
+
+  @Override
+  protected void setContent(@Nullable String contentFromRemoteConfig)
+  {
+    if (TextUtils.isEmpty(contentFromRemoteConfig) == false)
+    {
+      paragraph.setText(Html.fromHtml(contentFromRemoteConfig));
     }
   }
 }

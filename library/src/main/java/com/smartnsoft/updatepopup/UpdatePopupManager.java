@@ -284,6 +284,7 @@ public final class UpdatePopupManager
       {
         final Intent intent = new Intent(applicationContext, updatePopupActivityClass);
         intent.putExtra(UpdatePopupManager.UPDATE_INFORMATION_EXTRA, updatePopupInformations);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         applicationContext.startActivity(intent);
       }
     }

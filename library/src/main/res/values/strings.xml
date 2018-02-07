@@ -4,4 +4,7 @@
   <string name="update_title">Mettez à jour votre app</string>
   <string name="update_content">Nous vous informons qu\'une nouvelle version de l\'application est disponible</string>
   <string name="update_button_label">Mettre à jour</string>
+
+  <string name="update_popup_height">.9</string>
+  <string name="update_popup_width">.9</string>
 </resources>

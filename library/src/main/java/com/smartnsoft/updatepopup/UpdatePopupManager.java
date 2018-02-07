@@ -12,6 +12,7 @@ import android.support.annotation.IntDef;
 import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 import android.support.annotation.WorkerThread;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -43,6 +44,16 @@ public final class UpdatePopupManager
     return preferences.getLong(UpdatePopupManager.LAST_UPDATE_POPUP_CLICK_ON_LATER_TIMESTAMP_PREFERENCE_KEY, -1);
   }
 
+  public static long getLastSeenInformativeUpdate(@NonNull SharedPreferences preferences)
+  {
+    return preferences.getLong(UpdatePopupManager.LAST_SEEN_VERSION_UPDATE_INFORMATION_PREFERENCE_KEY, -1);
+  }
+
+  public static void setLastSeenInformativeUpdate(@NonNull SharedPreferences preferences, long versionCode)
+  {
+    preferences.edit().putLong(UpdatePopupManager.LAST_SEEN_VERSION_UPDATE_INFORMATION_PREFERENCE_KEY, versionCode).apply();
+  }
+
   private static boolean isUpdateTypeKnown(long updateType)
   {
     return updateType == INFORMATION_ABOUT_UPDATE
@@ -58,6 +69,12 @@ public final class UpdatePopupManager
     public Builder(@NonNull Context context, boolean isInDevelopmentMode)
     {
       this.updatePopupManager = new UpdatePopupManager(context, isInDevelopmentMode);
+    }
+
+    public Builder setFallbackUpdateApplicationId(@NonNull String applicationId)
+    {
+      updatePopupManager.setFallbackUpdateApplicationId(applicationId);
+      return this;
     }
 
     public Builder setUpdatePopupActivity(@NonNull Class<? extends UpdatePopupActivity> updatePopupActivity)
@@ -109,6 +126,8 @@ public final class UpdatePopupManager
 
   static final int BLOCKING_UPDATE = 3;
 
+  static final String UPDATE_INFORMATION_EXTRA = "updateInformationExtra";
+
   private static final long SYNCHRONISATION_TIMEOUT_IN_MILLISECONDS = 60 * 1000;
 
   private static final long MAXIMUM_CACHE_RETENTION_FOR_REMOTE_CONFIG_IN_MILLISECONS = 24 * 60 * 60 * 1000;
@@ -121,23 +140,23 @@ public final class UpdatePopupManager
 
   private static final String REMOTE_CONFIG_IMAGE_URL = "image";
 
-  private static final String REMOTE_CONFIG_CONTENT = "content";
+  private static final String REMOTE_CONFIG_UPDATE_CONTENT = "update_content";
 
-  private static final String REMOTE_CONFIG_BUTTON_TEXT = "actionButton";
+  private static final String REMOTE_CONFIG_CHANGELOG_CONTENT = "changelog_content";
 
-  private static final String REMOTE_CONFIG_UPDATE_NEEDED = "update_needed";
-
-  private static final String REMOTE_CONFIG_IS_BLOCKING_UPDATE = "is_blocking_update";
+  private static final String REMOTE_CONFIG_BUTTON_TEXT = "actionButtonLabel";
 
   private static final String REMOTE_CONFIG_ACTION_URL = "deeplink";
 
   private static final String REMOTE_CONFIG_PACKAGE_NAME_FOR_UPDATE = "package_name_for_update";
 
+  private static final String REMOTE_CONFIG_CURRENT_VERSION_CODE = "current_version_code";
+
   private static final String REMOTE_CONFIG_DIALOG_TYPE = "dialogType";
-
-  static final String UPDATE_INFORMATION_EXTRA = "updateInformationExtra";
-
+  
   private static final String LAST_UPDATE_POPUP_CLICK_ON_LATER_TIMESTAMP_PREFERENCE_KEY = "lastUpdatePopupClickOnLaterTimestamp";
+
+  private static final String LAST_SEEN_VERSION_UPDATE_INFORMATION_PREFERENCE_KEY = "lastSeenVersionUpdateInformation";
 
   private final FirebaseRemoteConfig firebaseRemoteConfig;
 
@@ -153,6 +172,8 @@ public final class UpdatePopupManager
 
   private long minimumTimeBetweenTwoRecommendedPopupInMilliseconds = UpdatePopupManager.MINIMUM_TIME_BETWEEN_TWO_RECOMMENDED_POPUP_IN_MILLISECONS;
 
+  private String fallbackUpdateApplicationId;
+
   private UpdatePopupManager(@NonNull Context context, final boolean isInDevelopmentMode)
   {
     this.applicationContext = context.getApplicationContext();
@@ -162,6 +183,11 @@ public final class UpdatePopupManager
         .setDeveloperModeEnabled(isInDevelopmentMode)
         .build();
     firebaseRemoteConfig.setConfigSettings(configSettings);
+  }
+
+  public void setFallbackUpdateApplicationId(String fallbackUpdateApplicationId)
+  {
+    this.fallbackUpdateApplicationId = fallbackUpdateApplicationId;
   }
 
   void setUpdatePopupActivityClass(
@@ -219,13 +245,17 @@ public final class UpdatePopupManager
 
   private void createAndDisplayPopup()
   {
-    final UpdatePopupInformations updatePopupInformations = new UpdatePopupInformations(firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_TITLE),
-        firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_IMAGE_URL),
-        firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_CONTENT),
-        firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_BUTTON_TEXT),
-        firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_ACTION_URL),
-        firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_PACKAGE_NAME_FOR_UPDATE),
-        (int) firebaseRemoteConfig.getLong(UpdatePopupManager.REMOTE_CONFIG_DIALOG_TYPE));
+    final UpdatePopupInformations updatePopupInformations = new UpdatePopupInformations();
+    updatePopupInformations.title = firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_TITLE);
+    updatePopupInformations.imageURL = firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_IMAGE_URL);
+    updatePopupInformations.updateContent = firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_UPDATE_CONTENT);
+    updatePopupInformations.changelogContent = firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_CHANGELOG_CONTENT);
+    updatePopupInformations.actionButtonLabel = firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_BUTTON_TEXT);
+    updatePopupInformations.deepLink = firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_ACTION_URL);
+    final String packageNameFromRemoteConfig = firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_PACKAGE_NAME_FOR_UPDATE);
+    updatePopupInformations.packageName = TextUtils.isEmpty(packageNameFromRemoteConfig) ? fallbackUpdateApplicationId : packageNameFromRemoteConfig;
+    updatePopupInformations.versionCode = firebaseRemoteConfig.getLong(UpdatePopupManager.REMOTE_CONFIG_CURRENT_VERSION_CODE);
+    updatePopupInformations.updatePopupType = (int) firebaseRemoteConfig.getLong(UpdatePopupManager.REMOTE_CONFIG_DIALOG_TYPE);
 
     final boolean isUpdateTypeKnown = isUpdateTypeKnown(updatePopupInformations.updatePopupType);
     if (isInDevelopmentMode)
@@ -235,15 +265,21 @@ public final class UpdatePopupManager
 
     if (isUpdateTypeKnown)
     {
-      if (updatePopupInformations.updatePopupType == BLOCKING_UPDATE
-          ||
-          (updatePopupInformations.updatePopupType == RECOMMENDED_UPDATE
-              && UpdatePopupManager.getUpdateLaterTimestamp(PreferenceManager.getDefaultSharedPreferences(applicationContext)) + minimumTimeBetweenTwoRecommendedPopupInMilliseconds > System.currentTimeMillis())
-          ||
-          //          (
-          updatePopupInformations.updatePopupType == INFORMATION_ABOUT_UPDATE
-        //TODO: Add condition to check if a changelog message (Informative type) has already been seen and to show it ONLY if it's an update
-        //          && UpdatePopupManager.getCurrentVersionCode(PreferenceManager.getDefaultSharedPreferences(applicationContext)))
+      final SharedPreferences defaultSharedPreferences = PreferenceManager.getDefaultSharedPreferences(applicationContext);
+      if (
+          updatePopupInformations.updatePopupType == BLOCKING_UPDATE // Forced to launch the popup
+              ||
+              (
+                  // It's recommended and the waiting delay after a "ask later" is over
+                  updatePopupInformations.updatePopupType == RECOMMENDED_UPDATE
+                      && UpdatePopupManager.getUpdateLaterTimestamp(defaultSharedPreferences) + minimumTimeBetweenTwoRecommendedPopupInMilliseconds > System.currentTimeMillis()
+              )
+              ||
+              (
+                  // A changelog message (Informative type) has not already been seen
+                  updatePopupInformations.updatePopupType == INFORMATION_ABOUT_UPDATE
+                      && UpdatePopupManager.getLastSeenInformativeUpdate(defaultSharedPreferences) < updatePopupInformations.versionCode
+              )
           )
       {
         final Intent intent = new Intent(applicationContext, updatePopupActivityClass);

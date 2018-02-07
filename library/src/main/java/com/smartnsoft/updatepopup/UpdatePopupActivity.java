@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.view.View;
@@ -100,18 +101,22 @@ public class UpdatePopupActivity
       case UpdatePopupManager.BLOCKING_UPDATE:
         later.setVisibility(View.GONE);
         close.setVisibility(View.GONE);
+        setContent(updateInformation.updateContent);
         break;
       case UpdatePopupManager.RECOMMENDED_UPDATE:
+        later.setVisibility(View.VISIBLE);
+        setContent(updateInformation.updateContent);
+        close.setVisibility(View.VISIBLE);
+        break;
       case UpdatePopupManager.INFORMATION_ABOUT_UPDATE:
       default:
-        later.setVisibility(View.VISIBLE);
         close.setVisibility(View.VISIBLE);
+        setContent(updateInformation.changelogContent);
         break;
     }
 
     setTitle(updateInformation.title);
     setButtonLabel(updateInformation.actionButtonLabel);
-    setContent(updateInformation.content);
     setImage(updateInformation.imageURL);
   }
 
@@ -124,7 +129,7 @@ public class UpdatePopupActivity
     }
     else if (view == later || view == close)
     {
-      askLater();
+      closePopup();
     }
   }
 
@@ -154,25 +159,34 @@ public class UpdatePopupActivity
   @Override
   public void onBackPressed()
   {
-    if (updateInformation != null && updateInformation.updatePopupType != UpdatePopupManager.BLOCKING_UPDATE)
-    {
-      askLater();
-    }
-    // Else do nothing because user can't leave
+    closePopup();
   }
 
-  protected void askLater()
+  protected void closePopup()
   {
-    final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-    if (updateInformation.updatePopupType == UpdatePopupManager.RECOMMENDED_UPDATE)
+    if (updateInformation != null)
     {
-      UpdatePopupManager.setUpdateLaterTimestamp(sharedPreferences, System.currentTimeMillis());
+      if (updateInformation.updatePopupType != UpdatePopupManager.BLOCKING_UPDATE)
+      {
+        final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        if (updateInformation.updatePopupType == UpdatePopupManager.RECOMMENDED_UPDATE)
+        {
+          UpdatePopupManager.setUpdateLaterTimestamp(sharedPreferences, System.currentTimeMillis());
+        }
+        else if (updateInformation.updatePopupType == UpdatePopupManager.INFORMATION_ABOUT_UPDATE)
+        {
+          // store current version information in shared_pref
+          UpdatePopupManager.setLastSeenInformativeUpdate(sharedPreferences, updateInformation.versionCode);
+        }
+        // We can finally close this popup
+        finish();
+      }
+      else
+      {
+        // Finish every activity from the app
+        ActivityCompat.finishAffinity(this);
+      }
     }
-    else if (updateInformation.updatePopupType == UpdatePopupManager.INFORMATION_ABOUT_UPDATE)
-    {
-      // store current version information in shared_pref
-    }
-    finish();
   }
 
   protected void setTitle(@Nullable final String titleFromRemoteConfig)

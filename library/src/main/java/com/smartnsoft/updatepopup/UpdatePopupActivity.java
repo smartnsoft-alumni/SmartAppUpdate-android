@@ -46,6 +46,23 @@ public class UpdatePopupActivity
     setContentView(getLayoutId());
     overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
 
+    bindViews();
+
+    final Bundle bundle = getIntent().getExtras();
+    if (bundle != null)
+    {
+      updateInformation = (UpdatePopupInformations) bundle.getSerializable(UpdatePopupManager.UPDATE_INFORMATION_EXTRA);
+      if (updateInformation == null)
+      {
+        finish();
+      }
+    }
+
+    updateLayoutWithUpdateInformation(updateInformation);
+  }
+
+  protected void bindViews()
+  {
     title = findViewById(R.id.title);
     paragraph = findViewById(R.id.paragraph);
 
@@ -68,18 +85,6 @@ public class UpdatePopupActivity
     {
       close.setOnClickListener(this);
     }
-
-    final Bundle bundle = getIntent().getExtras();
-    if (bundle != null)
-    {
-      updateInformation = (UpdatePopupInformations) bundle.getSerializable(UpdatePopupManager.UPDATE_INFORMATION_EXTRA);
-      if (updateInformation == null)
-      {
-        finish();
-      }
-    }
-
-    updateLayoutWithUpdateInformation(updateInformation);
   }
 
   @LayoutRes
@@ -117,13 +122,9 @@ public class UpdatePopupActivity
     {
       onActionButtonClick(updateInformation);
     }
-    else if (view == later)
+    else if (view == later || view == close)
     {
       askLater();
-    }
-    else if (view == close)
-    {
-      dismiss();
     }
   }
 
@@ -150,15 +151,27 @@ public class UpdatePopupActivity
     overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
   }
 
-  protected void dismiss()
+  @Override
+  public void onBackPressed()
   {
-    finish();
+    if (updateInformation != null && updateInformation.updatePopupType != UpdatePopupManager.BLOCKING_UPDATE)
+    {
+      askLater();
+    }
+    // Else do nothing because user can't leave
   }
 
   protected void askLater()
   {
     final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-    UpdatePopupManager.setUpdateLaterTimestamp(sharedPreferences, System.currentTimeMillis());
+    if (updateInformation.updatePopupType == UpdatePopupManager.RECOMMENDED_UPDATE)
+    {
+      UpdatePopupManager.setUpdateLaterTimestamp(sharedPreferences, System.currentTimeMillis());
+    }
+    else if (updateInformation.updatePopupType == UpdatePopupManager.INFORMATION_ABOUT_UPDATE)
+    {
+      // store current version information in shared_pref
+    }
     finish();
   }
 

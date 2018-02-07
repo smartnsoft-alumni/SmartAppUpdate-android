@@ -5,7 +5,6 @@ import java.io.Serializable;
 import com.smartnsoft.updatepopup.UpdatePopupManager.UpdatePopupType;
 
 /**
- * The class description here.
  *
  * @author Adrien Vitti
  * @since 2018.01.23

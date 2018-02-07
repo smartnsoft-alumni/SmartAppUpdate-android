@@ -25,6 +25,7 @@ allprojects {
   {
     appcompat_support_library_version = '27.0.2'
     gms_library_version = '11.8.0'
+    glide_library_version = '4.6.1'
     compileSdkVersion = 27
     minSdkVersion = 14
   }

@@ -138,7 +138,7 @@ public final class UpdatePopupManager
 
   private static final String REMOTE_CONFIG_TITLE = "title";
 
-  private static final String REMOTE_CONFIG_IMAGE_URL = "image";
+  private static final String REMOTE_CONFIG_IMAGE_URL = "imageURL";
 
   private static final String REMOTE_CONFIG_UPDATE_CONTENT = "update_content";
 
@@ -153,7 +153,7 @@ public final class UpdatePopupManager
   private static final String REMOTE_CONFIG_CURRENT_VERSION_CODE = "current_version_code";
 
   private static final String REMOTE_CONFIG_DIALOG_TYPE = "dialogType";
-  
+
   private static final String LAST_UPDATE_POPUP_CLICK_ON_LATER_TIMESTAMP_PREFERENCE_KEY = "lastUpdatePopupClickOnLaterTimestamp";
 
   private static final String LAST_SEEN_VERSION_UPDATE_INFORMATION_PREFERENCE_KEY = "lastSeenVersionUpdateInformation";

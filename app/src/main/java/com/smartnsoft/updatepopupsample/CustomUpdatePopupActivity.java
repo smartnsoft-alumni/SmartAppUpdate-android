@@ -1,5 +1,10 @@
 package com.smartnsoft.updatepopupsample;
 
+import android.support.annotation.Nullable;
+import android.text.TextUtils;
+import android.view.View;
+
+import com.bumptech.glide.Glide;
 import com.smartnsoft.updatepopup.UpdatePopupActivity;
 
 /**
@@ -11,6 +16,13 @@ public final class CustomUpdatePopupActivity
     extends UpdatePopupActivity
 {
 
-
-
+  @Override
+  protected void setImage(@Nullable String imageURLFromRemoteConfig)
+  {
+    if (TextUtils.isEmpty(imageURLFromRemoteConfig) == false)
+    {
+      image.setVisibility(View.VISIBLE);
+      Glide.with(this).load(imageURLFromRemoteConfig).into(image);
+    }
+  }
 }

@@ -10,8 +10,10 @@
 >
   <RelativeLayout
     android:orientation="vertical"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:layout_gravity="center"
+    android:gravity="center"
+    android:layout_centerInParent="true"
     android:layout_marginBottom="15dip"
     android:layout_marginEnd="20dip"
     android:layout_marginLeft="20dip"
@@ -24,7 +26,7 @@
 
     <ScrollView
       android:layout_width="match_parent"
-      android:layout_height="match_parent">
+      android:layout_height="wrap_content">
 
       <android.support.constraint.ConstraintLayout
         android:orientation="vertical"
@@ -57,11 +59,17 @@
           android:layout_height="0dp"
           android:layout_marginTop="40dip"
           android:adjustViewBounds="true"
+          android:visibility="gone"
           app:layout_constraintBottom_toTopOf="@id/paragraph"
           app:layout_constraintHeight_default="wrap"
+          app:layout_constraintHeight_min="150dip"
           app:layout_constraintLeft_toLeftOf="parent"
           app:layout_constraintRight_toRightOf="parent"
           app:layout_constraintTop_toBottomOf="@id/title"
+          app:layout_constraintWidth_default="spread"
+          tools:background="@color/blue"
+          tools:src="@drawable/ic_close"
+          tools:visibility="visible"
         />
 
         <TextView
@@ -73,6 +81,7 @@
           android:layout_marginLeft="10dip"
           android:layout_marginRight="10dip"
           android:layout_marginStart="10dip"
+          android:layout_marginTop="0dp"
           android:gravity="center_horizontal"
           android:padding="10dip"
           android:text="@string/update_content"
@@ -83,6 +92,7 @@
           app:layout_constraintLeft_toLeftOf="parent"
           app:layout_constraintRight_toRightOf="parent"
           app:layout_constraintTop_toBottomOf="@id/image"
+          app:layout_goneMarginTop="40dp"
         />
         <!--tools:text="@tools:sample/lorem/random"-->
 
@@ -126,6 +136,7 @@
           android:padding="15dip"
           android:text="@string/later"
           android:textColor="@color/very_dark_gray"
+          android:visibility="gone"
           app:layout_constraintBottom_toBottomOf="parent"
           app:layout_constraintHeight_default="wrap"
           app:layout_constraintLeft_toLeftOf="@id/action_button"
@@ -145,6 +156,7 @@
       android:layout_margin="20dip"
       android:src="@drawable/ic_close"
       android:tint="@color/gray"
+      android:visibility="gone"
     />
 
   </RelativeLayout>

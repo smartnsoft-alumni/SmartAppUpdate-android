@@ -28,7 +28,7 @@ android {
 dependencies {
   implementation("org.jetbrains.kotlin:kotlin-stdlib-jre7:${kotlin_version}")
   implementation("com.android.support:appcompat-v7:${appcompat_support_library_version}")
-  implementation("com.android.support.constraint:constraint-layout:1.1.0-beta4")
+  implementation("com.android.support.constraint:constraint-layout:${constraint_layout_library_version}")
   implementation("com.google.firebase:firebase-config:${gms_library_version}")
 
   implementation("com.github.bumptech.glide:glide:${glide_library_version}")

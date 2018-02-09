@@ -1,4 +1,4 @@
 <resources>
-  <string name="update_popup_height">.8</string>
-  <string name="update_popup_width">.7</string>
+  <string name="smartappupdate_update_popup_height">.8</string>
+  <string name="smartappupdate_update_popup_width">.7</string>
 </resources>

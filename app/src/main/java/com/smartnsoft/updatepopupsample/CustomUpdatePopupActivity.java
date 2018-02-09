@@ -6,7 +6,7 @@ import android.text.TextUtils;
 import android.view.View;
 
 import com.bumptech.glide.Glide;
-import com.smartnsoft.updatepopup.UpdatePopupActivity;
+import com.smartnsoft.smartappupdate.SmartAppUpdateActivity;
 
 /**
  * @author Adrien Vitti
@@ -14,7 +14,7 @@ import com.smartnsoft.updatepopup.UpdatePopupActivity;
  */
 
 public final class CustomUpdatePopupActivity
-    extends UpdatePopupActivity
+    extends SmartAppUpdateActivity
 {
 
   @Override

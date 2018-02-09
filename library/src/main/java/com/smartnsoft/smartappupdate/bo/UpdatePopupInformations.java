@@ -1,8 +1,8 @@
-package com.smartnsoft.updatepopup.bo;
+package com.smartnsoft.smartappupdate.bo;
 
 import java.io.Serializable;
 
-import com.smartnsoft.updatepopup.UpdatePopupManager.UpdatePopupType;
+import com.smartnsoft.smartappupdate.SmartAppUpdateManager.UpdatePopupType;
 
 /**
  * @author Adrien Vitti

@@ -1,4 +1,4 @@
-package com.smartnsoft.updatepopup;
+package com.smartnsoft.smartappupdate;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -20,14 +20,14 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
-import com.smartnsoft.updatepopup.bo.UpdatePopupInformations;
+import com.smartnsoft.smartappupdate.bo.UpdatePopupInformations;
 
 /**
  * @author Adrien Vitti
  * @since 2018.01.23
  */
-@SuppressWarnings("unused")
-public final class UpdatePopupManager
+@SuppressWarnings({ "unused", "WeakerAccess" })
+public final class SmartAppUpdateManager
 {
 
   @Retention(RetentionPolicy.SOURCE)
@@ -36,22 +36,22 @@ public final class UpdatePopupManager
 
   public static void setUpdateLaterTimestamp(@NonNull SharedPreferences preferences, long updateLaterTimestamp)
   {
-    preferences.edit().putLong(UpdatePopupManager.LAST_UPDATE_POPUP_CLICK_ON_LATER_TIMESTAMP_PREFERENCE_KEY, updateLaterTimestamp).apply();
+    preferences.edit().putLong(SmartAppUpdateManager.LAST_UPDATE_POPUP_CLICK_ON_LATER_TIMESTAMP_PREFERENCE_KEY, updateLaterTimestamp).apply();
   }
 
   public static long getUpdateLaterTimestamp(@NonNull SharedPreferences preferences)
   {
-    return preferences.getLong(UpdatePopupManager.LAST_UPDATE_POPUP_CLICK_ON_LATER_TIMESTAMP_PREFERENCE_KEY, -1);
+    return preferences.getLong(SmartAppUpdateManager.LAST_UPDATE_POPUP_CLICK_ON_LATER_TIMESTAMP_PREFERENCE_KEY, -1);
   }
 
   public static long getLastSeenInformativeUpdate(@NonNull SharedPreferences preferences)
   {
-    return preferences.getLong(UpdatePopupManager.LAST_SEEN_VERSION_UPDATE_INFORMATION_PREFERENCE_KEY, -1);
+    return preferences.getLong(SmartAppUpdateManager.LAST_SEEN_VERSION_UPDATE_INFORMATION_PREFERENCE_KEY, -1);
   }
 
   public static void setLastSeenInformativeUpdate(@NonNull SharedPreferences preferences, long versionCode)
   {
-    preferences.edit().putLong(UpdatePopupManager.LAST_SEEN_VERSION_UPDATE_INFORMATION_PREFERENCE_KEY, versionCode).apply();
+    preferences.edit().putLong(SmartAppUpdateManager.LAST_SEEN_VERSION_UPDATE_INFORMATION_PREFERENCE_KEY, versionCode).apply();
   }
 
   private static boolean isUpdateTypeKnown(long updateType)
@@ -64,22 +64,22 @@ public final class UpdatePopupManager
   public static class Builder
   {
 
-    final UpdatePopupManager updatePopupManager;
+    final SmartAppUpdateManager smartAppUpdateManager;
 
     public Builder(@NonNull Context context, boolean isInDevelopmentMode)
     {
-      this.updatePopupManager = new UpdatePopupManager(context, isInDevelopmentMode);
+      this.smartAppUpdateManager = new SmartAppUpdateManager(context, isInDevelopmentMode);
     }
 
     public Builder setFallbackUpdateApplicationId(@NonNull String applicationId)
     {
-      updatePopupManager.setFallbackUpdateApplicationId(applicationId);
+      smartAppUpdateManager.setFallbackUpdateApplicationId(applicationId);
       return this;
     }
 
-    public Builder setUpdatePopupActivity(@NonNull Class<? extends UpdatePopupActivity> updatePopupActivity)
+    public Builder setUpdatePopupActivity(@NonNull Class<? extends SmartAppUpdateActivity> updatePopupActivity)
     {
-      updatePopupManager.setUpdatePopupActivityClass(updatePopupActivity);
+      smartAppUpdateManager.setUpdatePopupActivityClass(updatePopupActivity);
       return this;
     }
 
@@ -89,7 +89,7 @@ public final class UpdatePopupManager
       {
         throw new IllegalArgumentException("Timeout cannot be lower or equal to 0");
       }
-      updatePopupManager.setSynchronousTimeoutInMillisecond(synchronousTimeoutInMilliseconds);
+      smartAppUpdateManager.setSynchronousTimeoutInMillisecond(synchronousTimeoutInMilliseconds);
       return this;
     }
 
@@ -99,7 +99,7 @@ public final class UpdatePopupManager
       {
         throw new IllegalArgumentException("Cache expiration duration cannot be lower or equal to 0");
       }
-      updatePopupManager.setMaxRemoteConfigCacheInMillisecond(maxConfigCacheDurationInMillisecond);
+      smartAppUpdateManager.setMaxRemoteConfigCacheInMillisecond(maxConfigCacheDurationInMillisecond);
       return this;
     }
 
@@ -110,13 +110,13 @@ public final class UpdatePopupManager
       {
         throw new IllegalArgumentException("Time between two popup must be higher than 0");
       }
-      updatePopupManager.setMinimumTimeBetweenTwoRecommendedPopupInMilliseconds(minimumTimeBetweenTwoRecommendedPopupInMilliseconds);
+      smartAppUpdateManager.setMinimumTimeBetweenTwoRecommendedPopupInMilliseconds(minimumTimeBetweenTwoRecommendedPopupInMilliseconds);
       return this;
     }
 
-    public UpdatePopupManager build()
+    public SmartAppUpdateManager build()
     {
-      return this.updatePopupManager;
+      return this.smartAppUpdateManager;
     }
   }
 
@@ -134,7 +134,7 @@ public final class UpdatePopupManager
 
   private static final long MINIMUM_TIME_BETWEEN_TWO_RECOMMENDED_POPUP_IN_MILLISECONS = 3 * 24 * 60 * 60 * 1000;
 
-  private static final String TAG = "UpdatePopupManager";
+  private static final String TAG = "SmartAppUpdateManager";
 
   private static final String REMOTE_CONFIG_TITLE = "title";
 
@@ -154,9 +154,9 @@ public final class UpdatePopupManager
 
   private static final String REMOTE_CONFIG_DIALOG_TYPE = "dialogType";
 
-  private static final String LAST_UPDATE_POPUP_CLICK_ON_LATER_TIMESTAMP_PREFERENCE_KEY = "lastUpdatePopupClickOnLaterTimestamp";
+  private static final String LAST_UPDATE_POPUP_CLICK_ON_LATER_TIMESTAMP_PREFERENCE_KEY = "smartappupdate_lastUpdatePopupClickOnLaterTimestamp";
 
-  private static final String LAST_SEEN_VERSION_UPDATE_INFORMATION_PREFERENCE_KEY = "lastSeenVersionUpdateInformation";
+  private static final String LAST_SEEN_VERSION_UPDATE_INFORMATION_PREFERENCE_KEY = "smartappupdate_lastSeenVersionUpdateInformation";
 
   private final FirebaseRemoteConfig firebaseRemoteConfig;
 
@@ -164,17 +164,17 @@ public final class UpdatePopupManager
 
   private final Context applicationContext;
 
-  private Class<? extends UpdatePopupActivity> updatePopupActivityClass = UpdatePopupActivity.class;
+  private Class<? extends SmartAppUpdateActivity> updatePopupActivityClass = SmartAppUpdateActivity.class;
 
-  private long synchronousTimeoutInMillisecond = UpdatePopupManager.SYNCHRONISATION_TIMEOUT_IN_MILLISECONDS;
+  private long synchronousTimeoutInMillisecond = SmartAppUpdateManager.SYNCHRONISATION_TIMEOUT_IN_MILLISECONDS;
 
-  private long maxConfigCacheDurationInMillisecond = UpdatePopupManager.MAXIMUM_CACHE_RETENTION_FOR_REMOTE_CONFIG_IN_MILLISECONS;
+  private long maxConfigCacheDurationInMillisecond = SmartAppUpdateManager.MAXIMUM_CACHE_RETENTION_FOR_REMOTE_CONFIG_IN_MILLISECONS;
 
-  private long minimumTimeBetweenTwoRecommendedPopupInMilliseconds = UpdatePopupManager.MINIMUM_TIME_BETWEEN_TWO_RECOMMENDED_POPUP_IN_MILLISECONS;
+  private long minimumTimeBetweenTwoRecommendedPopupInMilliseconds = SmartAppUpdateManager.MINIMUM_TIME_BETWEEN_TWO_RECOMMENDED_POPUP_IN_MILLISECONS;
 
   private String fallbackUpdateApplicationId;
 
-  private UpdatePopupManager(@NonNull Context context, final boolean isInDevelopmentMode)
+  private SmartAppUpdateManager(@NonNull Context context, final boolean isInDevelopmentMode)
   {
     this.applicationContext = context.getApplicationContext();
     firebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
@@ -191,7 +191,7 @@ public final class UpdatePopupManager
   }
 
   void setUpdatePopupActivityClass(
-      Class<? extends UpdatePopupActivity> updatePopupActivityClass)
+      Class<? extends SmartAppUpdateActivity> updatePopupActivityClass)
   {
     this.updatePopupActivityClass = updatePopupActivityClass;
   }
@@ -249,16 +249,16 @@ public final class UpdatePopupManager
   private void createAndDisplayPopup()
   {
     final UpdatePopupInformations updatePopupInformations = new UpdatePopupInformations();
-    updatePopupInformations.title = firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_TITLE);
-    updatePopupInformations.imageURL = firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_IMAGE_URL);
-    updatePopupInformations.updateContent = firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_UPDATE_CONTENT);
-    updatePopupInformations.changelogContent = firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_CHANGELOG_CONTENT);
-    updatePopupInformations.actionButtonLabel = firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_BUTTON_TEXT);
-    updatePopupInformations.deepLink = firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_ACTION_URL);
-    final String packageNameFromRemoteConfig = firebaseRemoteConfig.getString(UpdatePopupManager.REMOTE_CONFIG_PACKAGE_NAME_FOR_UPDATE);
+    updatePopupInformations.title = firebaseRemoteConfig.getString(SmartAppUpdateManager.REMOTE_CONFIG_TITLE);
+    updatePopupInformations.imageURL = firebaseRemoteConfig.getString(SmartAppUpdateManager.REMOTE_CONFIG_IMAGE_URL);
+    updatePopupInformations.updateContent = firebaseRemoteConfig.getString(SmartAppUpdateManager.REMOTE_CONFIG_UPDATE_CONTENT);
+    updatePopupInformations.changelogContent = firebaseRemoteConfig.getString(SmartAppUpdateManager.REMOTE_CONFIG_CHANGELOG_CONTENT);
+    updatePopupInformations.actionButtonLabel = firebaseRemoteConfig.getString(SmartAppUpdateManager.REMOTE_CONFIG_BUTTON_TEXT);
+    updatePopupInformations.deepLink = firebaseRemoteConfig.getString(SmartAppUpdateManager.REMOTE_CONFIG_ACTION_URL);
+    final String packageNameFromRemoteConfig = firebaseRemoteConfig.getString(SmartAppUpdateManager.REMOTE_CONFIG_PACKAGE_NAME_FOR_UPDATE);
     updatePopupInformations.packageName = TextUtils.isEmpty(packageNameFromRemoteConfig) ? fallbackUpdateApplicationId : packageNameFromRemoteConfig;
-    updatePopupInformations.versionCode = firebaseRemoteConfig.getLong(UpdatePopupManager.REMOTE_CONFIG_CURRENT_VERSION_CODE);
-    updatePopupInformations.updatePopupType = (int) firebaseRemoteConfig.getLong(UpdatePopupManager.REMOTE_CONFIG_DIALOG_TYPE);
+    updatePopupInformations.versionCode = firebaseRemoteConfig.getLong(SmartAppUpdateManager.REMOTE_CONFIG_CURRENT_VERSION_CODE);
+    updatePopupInformations.updatePopupType = (int) firebaseRemoteConfig.getLong(SmartAppUpdateManager.REMOTE_CONFIG_DIALOG_TYPE);
 
     final boolean isUpdateTypeKnown = isUpdateTypeKnown(updatePopupInformations.updatePopupType);
     if (isInDevelopmentMode)
@@ -275,18 +275,18 @@ public final class UpdatePopupManager
               (
                   // It's recommended and the waiting delay after a "ask later" is over
                   updatePopupInformations.updatePopupType == RECOMMENDED_UPDATE
-                      && UpdatePopupManager.getUpdateLaterTimestamp(defaultSharedPreferences) + minimumTimeBetweenTwoRecommendedPopupInMilliseconds > System.currentTimeMillis()
+                      && SmartAppUpdateManager.getUpdateLaterTimestamp(defaultSharedPreferences) + minimumTimeBetweenTwoRecommendedPopupInMilliseconds > System.currentTimeMillis()
               )
               ||
               (
                   // A changelog message (Informative type) has not already been seen
                   updatePopupInformations.updatePopupType == INFORMATION_ABOUT_UPDATE
-                      && UpdatePopupManager.getLastSeenInformativeUpdate(defaultSharedPreferences) < updatePopupInformations.versionCode
+                      && SmartAppUpdateManager.getLastSeenInformativeUpdate(defaultSharedPreferences) < updatePopupInformations.versionCode
               )
           )
       {
         final Intent intent = new Intent(applicationContext, updatePopupActivityClass);
-        intent.putExtra(UpdatePopupManager.UPDATE_INFORMATION_EXTRA, updatePopupInformations);
+        intent.putExtra(SmartAppUpdateManager.UPDATE_INFORMATION_EXTRA, updatePopupInformations);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         applicationContext.startActivity(intent);
       }

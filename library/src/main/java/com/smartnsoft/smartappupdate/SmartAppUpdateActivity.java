@@ -1,4 +1,4 @@
-package com.smartnsoft.updatepopup;
+package com.smartnsoft.smartappupdate;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -15,13 +15,14 @@ import android.view.View.OnClickListener;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.smartnsoft.updatepopup.bo.UpdatePopupInformations;
+import com.smartnsoft.smartappupdate.bo.UpdatePopupInformations;
 
 /**
  * @author Adrien Vitti
  * @since 2018.01.23
  */
-public class UpdatePopupActivity
+@SuppressWarnings({ "unused", "WeakerAccess" })
+public class SmartAppUpdateActivity
     extends AppCompatActivity
     implements OnClickListener
 {
@@ -52,7 +53,7 @@ public class UpdatePopupActivity
     final Bundle bundle = getIntent().getExtras();
     if (bundle != null)
     {
-      updateInformation = (UpdatePopupInformations) bundle.getSerializable(UpdatePopupManager.UPDATE_INFORMATION_EXTRA);
+      updateInformation = (UpdatePopupInformations) bundle.getSerializable(SmartAppUpdateManager.UPDATE_INFORMATION_EXTRA);
       if (updateInformation == null)
       {
         finish();
@@ -91,24 +92,24 @@ public class UpdatePopupActivity
   @LayoutRes
   protected int getLayoutId()
   {
-    return R.layout.update_popup_activity;
+    return R.layout.smartappupdate_popup_activity;
   }
 
   protected void updateLayoutWithUpdateInformation(UpdatePopupInformations updateInformation)
   {
     switch (updateInformation.updatePopupType)
     {
-      case UpdatePopupManager.BLOCKING_UPDATE:
+      case SmartAppUpdateManager.BLOCKING_UPDATE:
         later.setVisibility(View.GONE);
         close.setVisibility(View.GONE);
         setContent(updateInformation.updateContent);
         break;
-      case UpdatePopupManager.RECOMMENDED_UPDATE:
+      case SmartAppUpdateManager.RECOMMENDED_UPDATE:
         later.setVisibility(View.VISIBLE);
         setContent(updateInformation.updateContent);
         close.setVisibility(View.VISIBLE);
         break;
-      case UpdatePopupManager.INFORMATION_ABOUT_UPDATE:
+      case SmartAppUpdateManager.INFORMATION_ABOUT_UPDATE:
       default:
         close.setVisibility(View.VISIBLE);
         setContent(updateInformation.changelogContent);
@@ -143,7 +144,7 @@ public class UpdatePopupActivity
     {
       startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(updateInformation.deepLink)));
     }
-    if (updateInformation.updatePopupType != UpdatePopupManager.BLOCKING_UPDATE)
+    if (updateInformation.updatePopupType != SmartAppUpdateManager.BLOCKING_UPDATE)
     {
       finish();
     }
@@ -166,17 +167,17 @@ public class UpdatePopupActivity
   {
     if (updateInformation != null)
     {
-      if (updateInformation.updatePopupType != UpdatePopupManager.BLOCKING_UPDATE)
+      if (updateInformation.updatePopupType != SmartAppUpdateManager.BLOCKING_UPDATE)
       {
         final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        if (updateInformation.updatePopupType == UpdatePopupManager.RECOMMENDED_UPDATE)
+        if (updateInformation.updatePopupType == SmartAppUpdateManager.RECOMMENDED_UPDATE)
         {
-          UpdatePopupManager.setUpdateLaterTimestamp(sharedPreferences, System.currentTimeMillis());
+          SmartAppUpdateManager.setUpdateLaterTimestamp(sharedPreferences, System.currentTimeMillis());
         }
-        else if (updateInformation.updatePopupType == UpdatePopupManager.INFORMATION_ABOUT_UPDATE)
+        else if (updateInformation.updatePopupType == SmartAppUpdateManager.INFORMATION_ABOUT_UPDATE)
         {
           // store current version information in shared_pref
-          UpdatePopupManager.setLastSeenInformativeUpdate(sharedPreferences, updateInformation.versionCode);
+          SmartAppUpdateManager.setLastSeenInformativeUpdate(sharedPreferences, updateInformation.versionCode);
         }
         // We can finally close this popup
         finish();

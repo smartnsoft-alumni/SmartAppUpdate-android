@@ -1,5 +1,6 @@
 apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
+apply plugin: "maven"
+apply plugin: "signing"
 
 android {
   compileSdkVersion rootProject.compileSdkVersion
@@ -9,6 +10,8 @@ android {
     targetSdkVersion rootProject.compileSdkVersion
     versionCode 1
     versionName "1.0"
+    resourcePrefix 'smartappupdate_'
+    consumerProguardFiles 'proguard-rules.pro'
   }
 
   buildTypes {
@@ -22,7 +25,65 @@ android {
 
 dependencies {
   implementation("com.android.support:appcompat-v7:${appcompat_support_library_version}")
+  implementation("com.android.support:support-v4:${appcompat_support_library_version}")
   implementation("com.android.support.constraint:constraint-layout:${constraint_layout_library_version}")
   implementation("com.google.firebase:firebase-config:${gms_library_version}")
+}
 
+version = android.defaultConfig.versionName
+group = "com.smartnsoft"
+
+uploadArchives
+{
+  repositories
+  {
+    mavenDeployer
+    {
+      repository(url: nexusReleaseUrl)
+      {
+        authentication(userName: nexusUsername, password: nexusPassword)
+      }
+      snapshotRepository(url: nexusSnapshotUrl)
+      {
+        authentication(userName: nexusUsername, password: nexusPassword)
+      }
+      pom.project
+      {
+        artifactId "smartappupdate"
+        name "smartappupdate"
+        packaging "aar"
+      }
+    }
+  }
+}
+
+// build a jar with source files
+task generateSourcesJar(type: Jar) {
+  from android.sourceSets.main.java.srcDirs
+  classifier = 'sources'
+}
+
+task javadoc(type: Javadoc) {
+  failOnError false
+  source = android.sourceSets.main.java.srcDirs
+  classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+  classpath += configurations.compile
+}
+
+// We need this code to avoid the warning due to support annotations usage
+afterEvaluate {
+  javadoc.classpath += files(android.libraryVariants.collect { variant ->
+    variant.javaCompiler.classpath.files
+  })
+}
+
+// build a jar with javadoc
+task generateJavadocJar(type: Jar, dependsOn: javadoc) {
+  from javadoc.destinationDir
+  classifier = 'javadoc'
+}
+
+artifacts {
+  archives generateSourcesJar
+  archives generateJavadocJar
 }

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+  <style name="smartappupdate_CardStyle">
+    <item name="android:orientation">vertical</item>
+    <item name="android:layout_width">0dp</item>
+    <item name="android:layout_height">0dp</item>
+    <item name="android:layout_gravity">center</item>
+    <item name="android:layout_marginTop">15dip</item>
+    <item name="android:layout_marginBottom">15dip</item>
+    <item tools:targetApi="17" name="android:layout_marginEnd">20dip</item>
+    <item name="android:layout_marginLeft">20dip</item>
+    <item name="android:layout_marginRight">20dip</item>
+    <item tools:targetApi="17" name="android:layout_marginStart">20dip</item>
+    <item name="android:background">@drawable/smartappupdate_white_card_background</item>
+    <item tools:targetApi="21" name="android:elevation">2dip</item>
+    <item name="android:gravity">center</item>
+    <item name="layout_constraintBottom_toBottomOf">parent</item>
+    <item name="layout_constraintHeight_percent">@string/smartappupdate_update_popup_height</item>
+    <item name="layout_constraintLeft_toLeftOf">parent</item>
+    <item name="layout_constraintRight_toRightOf">parent</item>
+    <item name="layout_constraintTop_toTopOf">parent</item>
+    <item name="layout_constraintWidth_percent">@string/smartappupdate_update_popup_width</item>
+  </style>
+
+</resources>

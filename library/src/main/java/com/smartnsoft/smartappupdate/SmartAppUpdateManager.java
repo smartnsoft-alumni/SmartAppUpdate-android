@@ -11,6 +11,7 @@ import android.support.annotation.AnyThread;
 import android.support.annotation.IntDef;
 import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
 import android.text.TextUtils;
 import android.util.Log;
@@ -130,29 +131,33 @@ public final class SmartAppUpdateManager
 
   private static final long SYNCHRONISATION_TIMEOUT_IN_MILLISECONDS = 60 * 1000;
 
-  private static final long MAXIMUM_CACHE_RETENTION_FOR_REMOTE_CONFIG_IN_MILLISECONS = 24 * 60 * 60 * 1000;
+  private static final long MAXIMUM_CACHE_RETENTION_FOR_REMOTE_CONFIG_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
 
-  private static final long MINIMUM_TIME_BETWEEN_TWO_RECOMMENDED_POPUP_IN_MILLISECONS = 3 * 24 * 60 * 60 * 1000;
+  private static final long MINIMUM_TIME_BETWEEN_TWO_RECOMMENDED_POPUP_IN_MILLISECONDS = 3 * 24 * 60 * 60 * 1000;
+
+  private static final long DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
 
   private static final String TAG = "SmartAppUpdateManager";
 
-  private static final String REMOTE_CONFIG_TITLE = "title";
+  private static final String REMOTE_CONFIG_TITLE = "update_title";
 
-  private static final String REMOTE_CONFIG_IMAGE_URL = "imageURL";
+  private static final String REMOTE_CONFIG_IMAGE_URL = "update_imageURL";
 
   private static final String REMOTE_CONFIG_UPDATE_CONTENT = "update_content";
 
-  private static final String REMOTE_CONFIG_CHANGELOG_CONTENT = "changelog_content";
+  private static final String REMOTE_CONFIG_CHANGELOG_CONTENT = "update_changelog_content";
 
-  private static final String REMOTE_CONFIG_BUTTON_TEXT = "actionButtonLabel";
+  private static final String REMOTE_CONFIG_BUTTON_TEXT = "update_actionButtonLabel";
 
-  private static final String REMOTE_CONFIG_ACTION_URL = "deeplink";
+  private static final String REMOTE_CONFIG_ACTION_URL = "update_deeplink";
 
-  private static final String REMOTE_CONFIG_PACKAGE_NAME_FOR_UPDATE = "package_name_for_update";
+  private static final String REMOTE_CONFIG_PACKAGE_NAME_FOR_UPDATE = "update_package_name";
 
   private static final String REMOTE_CONFIG_CURRENT_VERSION_CODE = "current_version_code";
 
-  private static final String REMOTE_CONFIG_DIALOG_TYPE = "dialogType";
+  private static final String REMOTE_CONFIG_DIALOG_TYPE = "update_dialogType";
+
+  private static final String REMOTE_CONFIG_TIME_GAP_BETWEEN_TWO_POPUP_IN_DAYS = "update_ask_later_snooze_in_days";
 
   private static final String LAST_UPDATE_POPUP_CLICK_ON_LATER_TIMESTAMP_PREFERENCE_KEY = "smartappupdate_lastUpdatePopupClickOnLaterTimestamp";
 
@@ -168,9 +173,9 @@ public final class SmartAppUpdateManager
 
   private long synchronousTimeoutInMillisecond = SmartAppUpdateManager.SYNCHRONISATION_TIMEOUT_IN_MILLISECONDS;
 
-  private long maxConfigCacheDurationInMillisecond = SmartAppUpdateManager.MAXIMUM_CACHE_RETENTION_FOR_REMOTE_CONFIG_IN_MILLISECONS;
+  private long maxConfigCacheDurationInMillisecond = SmartAppUpdateManager.MAXIMUM_CACHE_RETENTION_FOR_REMOTE_CONFIG_IN_MILLISECONDS;
 
-  private long minimumTimeBetweenTwoRecommendedPopupInMilliseconds = SmartAppUpdateManager.MINIMUM_TIME_BETWEEN_TWO_RECOMMENDED_POPUP_IN_MILLISECONS;
+  private long minimumTimeBetweenTwoRecommendedPopupInMilliseconds = SmartAppUpdateManager.MINIMUM_TIME_BETWEEN_TWO_RECOMMENDED_POPUP_IN_MILLISECONDS;
 
   private String fallbackUpdateApplicationId;
 
@@ -246,7 +251,17 @@ public final class SmartAppUpdateManager
     }
   }
 
-  private void createAndDisplayPopup()
+  public final void createAndDisplayPopup()
+  {
+    final Intent popupIntent = createPopupIntent();
+    if (popupIntent != null)
+    {
+      applicationContext.startActivity(popupIntent);
+    }
+  }
+
+  @Nullable
+  public final Intent createPopupIntent()
   {
     final UpdatePopupInformations updatePopupInformations = new UpdatePopupInformations();
     updatePopupInformations.title = firebaseRemoteConfig.getString(SmartAppUpdateManager.REMOTE_CONFIG_TITLE);
@@ -259,6 +274,11 @@ public final class SmartAppUpdateManager
     updatePopupInformations.packageName = TextUtils.isEmpty(packageNameFromRemoteConfig) ? fallbackUpdateApplicationId : packageNameFromRemoteConfig;
     updatePopupInformations.versionCode = firebaseRemoteConfig.getLong(SmartAppUpdateManager.REMOTE_CONFIG_CURRENT_VERSION_CODE);
     updatePopupInformations.updatePopupType = (int) firebaseRemoteConfig.getLong(SmartAppUpdateManager.REMOTE_CONFIG_DIALOG_TYPE);
+    final long minimumTimeBetweenTwoRecommendedPopupInDays = firebaseRemoteConfig.getLong(SmartAppUpdateManager.REMOTE_CONFIG_TIME_GAP_BETWEEN_TWO_POPUP_IN_DAYS);
+    if (minimumTimeBetweenTwoRecommendedPopupInDays != 0)
+    {
+      minimumTimeBetweenTwoRecommendedPopupInMilliseconds = minimumTimeBetweenTwoRecommendedPopupInDays * SmartAppUpdateManager.DAY_IN_MILLISECONDS;
+    }
 
     final boolean isUpdateTypeKnown = isUpdateTypeKnown(updatePopupInformations.updatePopupType);
     if (isInDevelopmentMode)
@@ -288,9 +308,11 @@ public final class SmartAppUpdateManager
         final Intent intent = new Intent(applicationContext, updatePopupActivityClass);
         intent.putExtra(SmartAppUpdateManager.UPDATE_INFORMATION_EXTRA, updatePopupInformations);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        applicationContext.startActivity(intent);
+        return intent;
       }
     }
+
+    return null;
   }
 
   @WorkerThread
@@ -352,7 +374,7 @@ public final class SmartAppUpdateManager
     }
   }
 
-  public void reShowUpdatePopupIfNeeded()
+  public void refreshConfigIfNeededAndDisplayPopup()
   {
     final FirebaseRemoteConfigInfo firebaseRemoteConfigInfo = firebaseRemoteConfig.getInfo();
     if (firebaseRemoteConfigInfo.getLastFetchStatus() == FirebaseRemoteConfig.LAST_FETCH_STATUS_SUCCESS

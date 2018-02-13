@@ -136,13 +136,21 @@ public class SmartAppUpdateActivity
 
   protected void onActionButtonClick(UpdatePopupInformations updateInformation)
   {
-    try
+    if (updateInformation.updatePopupType == SmartAppUpdateManager.INFORMATION_ABOUT_UPDATE)
     {
-      startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + updateInformation.packageName)));
+      closePopup();
+      return;
     }
-    catch (android.content.ActivityNotFoundException anfe)
+    else
     {
-      startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(updateInformation.deepLink)));
+      try
+      {
+        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + updateInformation.packageName)));
+      }
+      catch (android.content.ActivityNotFoundException anfe)
+      {
+        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(updateInformation.deepLink)));
+      }
     }
     if (updateInformation.updatePopupType != SmartAppUpdateManager.BLOCKING_UPDATE)
     {

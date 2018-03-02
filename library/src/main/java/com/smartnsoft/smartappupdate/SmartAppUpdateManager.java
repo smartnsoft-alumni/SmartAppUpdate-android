@@ -21,6 +21,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
+import com.smartnsoft.smartappupdate.bo.RemoteConfigMatchingInformation;
 import com.smartnsoft.smartappupdate.bo.UpdatePopupInformations;
 
 /**
@@ -35,25 +36,6 @@ public final class SmartAppUpdateManager
   @IntDef({ INFORMATION_ABOUT_UPDATE, RECOMMENDED_UPDATE, BLOCKING_UPDATE })
   public @interface UpdatePopupType {}
 
-  public static void setUpdateLaterTimestamp(@NonNull SharedPreferences preferences, long updateLaterTimestamp)
-  {
-    preferences.edit().putLong(SmartAppUpdateManager.LAST_UPDATE_POPUP_CLICK_ON_LATER_TIMESTAMP_PREFERENCE_KEY, updateLaterTimestamp).apply();
-  }
-
-  public static long getUpdateLaterTimestamp(@NonNull SharedPreferences preferences)
-  {
-    return preferences.getLong(SmartAppUpdateManager.LAST_UPDATE_POPUP_CLICK_ON_LATER_TIMESTAMP_PREFERENCE_KEY, -1);
-  }
-
-  public static long getLastSeenInformativeUpdate(@NonNull SharedPreferences preferences)
-  {
-    return preferences.getLong(SmartAppUpdateManager.LAST_SEEN_VERSION_UPDATE_INFORMATION_PREFERENCE_KEY, -1);
-  }
-
-  public static void setLastSeenInformativeUpdate(@NonNull SharedPreferences preferences, long versionCode)
-  {
-    preferences.edit().putLong(SmartAppUpdateManager.LAST_SEEN_VERSION_UPDATE_INFORMATION_PREFERENCE_KEY, versionCode).apply();
-  }
 
   private static boolean isUpdateTypeKnown(long updateType)
   {
@@ -81,6 +63,13 @@ public final class SmartAppUpdateManager
     public Builder setUpdatePopupActivity(@NonNull Class<? extends SmartAppUpdateActivity> updatePopupActivity)
     {
       smartAppUpdateManager.setUpdatePopupActivityClass(updatePopupActivity);
+      return this;
+    }
+
+    public Builder setRemoteConfigMatchingInformation(
+        @NonNull RemoteConfigMatchingInformation remoteConfigMatchingInformation)
+    {
+      smartAppUpdateManager.setRemoteConfigMatchInformation(remoteConfigMatchingInformation);
       return this;
     }
 
@@ -121,11 +110,11 @@ public final class SmartAppUpdateManager
     }
   }
 
-  static final int INFORMATION_ABOUT_UPDATE = 1;
+  static final int BLOCKING_UPDATE = 1;
 
   static final int RECOMMENDED_UPDATE = 2;
 
-  static final int BLOCKING_UPDATE = 3;
+  static final int INFORMATION_ABOUT_UPDATE = 3;
 
   static final String UPDATE_INFORMATION_EXTRA = "updateInformationExtra";
 
@@ -139,30 +128,6 @@ public final class SmartAppUpdateManager
 
   private static final String TAG = "SmartAppUpdateManager";
 
-  private static final String REMOTE_CONFIG_TITLE = "update_title";
-
-  private static final String REMOTE_CONFIG_IMAGE_URL = "update_imageURL";
-
-  private static final String REMOTE_CONFIG_UPDATE_CONTENT = "update_content";
-
-  private static final String REMOTE_CONFIG_CHANGELOG_CONTENT = "update_changelog_content";
-
-  private static final String REMOTE_CONFIG_BUTTON_TEXT = "update_actionButtonLabel";
-
-  private static final String REMOTE_CONFIG_ACTION_URL = "update_deeplink";
-
-  private static final String REMOTE_CONFIG_PACKAGE_NAME_FOR_UPDATE = "update_package_name";
-
-  private static final String REMOTE_CONFIG_CURRENT_VERSION_CODE = "current_version_code";
-
-  private static final String REMOTE_CONFIG_DIALOG_TYPE = "update_dialogType";
-
-  private static final String REMOTE_CONFIG_TIME_GAP_BETWEEN_TWO_POPUP_IN_DAYS = "update_ask_later_snooze_in_days";
-
-  private static final String LAST_UPDATE_POPUP_CLICK_ON_LATER_TIMESTAMP_PREFERENCE_KEY = "smartappupdate_lastUpdatePopupClickOnLaterTimestamp";
-
-  private static final String LAST_SEEN_VERSION_UPDATE_INFORMATION_PREFERENCE_KEY = "smartappupdate_lastSeenVersionUpdateInformation";
-
   private final FirebaseRemoteConfig firebaseRemoteConfig;
 
   private final boolean isInDevelopmentMode;
@@ -170,6 +135,8 @@ public final class SmartAppUpdateManager
   private final Context applicationContext;
 
   private Class<? extends SmartAppUpdateActivity> updatePopupActivityClass = SmartAppUpdateActivity.class;
+
+  private RemoteConfigMatchingInformation remoteConfigMatchingInformation = new RemoteConfigMatchingInformation();
 
   private long synchronousTimeoutInMillisecond = SmartAppUpdateManager.SYNCHRONISATION_TIMEOUT_IN_MILLISECONDS;
 
@@ -188,6 +155,11 @@ public final class SmartAppUpdateManager
         .setDeveloperModeEnabled(isInDevelopmentMode)
         .build();
     firebaseRemoteConfig.setConfigSettings(configSettings);
+  }
+
+  public void setRemoteConfigMatchInformation(RemoteConfigMatchingInformation remoteConfigMatchInformation)
+  {
+    this.remoteConfigMatchingInformation = remoteConfigMatchInformation;
   }
 
   public void setFallbackUpdateApplicationId(String fallbackUpdateApplicationId)
@@ -264,17 +236,21 @@ public final class SmartAppUpdateManager
   public final Intent createPopupIntent()
   {
     final UpdatePopupInformations updatePopupInformations = new UpdatePopupInformations();
-    updatePopupInformations.title = firebaseRemoteConfig.getString(SmartAppUpdateManager.REMOTE_CONFIG_TITLE);
-    updatePopupInformations.imageURL = firebaseRemoteConfig.getString(SmartAppUpdateManager.REMOTE_CONFIG_IMAGE_URL);
-    updatePopupInformations.updateContent = firebaseRemoteConfig.getString(SmartAppUpdateManager.REMOTE_CONFIG_UPDATE_CONTENT);
-    updatePopupInformations.changelogContent = firebaseRemoteConfig.getString(SmartAppUpdateManager.REMOTE_CONFIG_CHANGELOG_CONTENT);
-    updatePopupInformations.actionButtonLabel = firebaseRemoteConfig.getString(SmartAppUpdateManager.REMOTE_CONFIG_BUTTON_TEXT);
-    updatePopupInformations.deepLink = firebaseRemoteConfig.getString(SmartAppUpdateManager.REMOTE_CONFIG_ACTION_URL);
-    final String packageNameFromRemoteConfig = firebaseRemoteConfig.getString(SmartAppUpdateManager.REMOTE_CONFIG_PACKAGE_NAME_FOR_UPDATE);
+
+    updatePopupInformations.title = firebaseRemoteConfig.getString(remoteConfigMatchingInformation.popupTitle);
+    updatePopupInformations.imageURL = firebaseRemoteConfig.getString(remoteConfigMatchingInformation.imageURL);
+    updatePopupInformations.updateContent = firebaseRemoteConfig.getString(remoteConfigMatchingInformation.updateContent);
+    updatePopupInformations.changelogContent = firebaseRemoteConfig.getString(remoteConfigMatchingInformation.changelogContent);
+    updatePopupInformations.actionButtonLabel = firebaseRemoteConfig.getString(remoteConfigMatchingInformation.actionButtonText);
+    updatePopupInformations.deepLink = firebaseRemoteConfig.getString(remoteConfigMatchingInformation.updateActionDeeplink);
+
+    final String packageNameFromRemoteConfig = firebaseRemoteConfig.getString(remoteConfigMatchingInformation.packageName);
     updatePopupInformations.packageName = TextUtils.isEmpty(packageNameFromRemoteConfig) ? fallbackUpdateApplicationId : packageNameFromRemoteConfig;
-    updatePopupInformations.versionCode = firebaseRemoteConfig.getLong(SmartAppUpdateManager.REMOTE_CONFIG_CURRENT_VERSION_CODE);
-    updatePopupInformations.updatePopupType = (int) firebaseRemoteConfig.getLong(SmartAppUpdateManager.REMOTE_CONFIG_DIALOG_TYPE);
-    final long minimumTimeBetweenTwoRecommendedPopupInDays = firebaseRemoteConfig.getLong(SmartAppUpdateManager.REMOTE_CONFIG_TIME_GAP_BETWEEN_TWO_POPUP_IN_DAYS);
+    updatePopupInformations.versionCode = firebaseRemoteConfig.getLong(remoteConfigMatchingInformation.currentVersionCode);
+    updatePopupInformations.updatePopupType = (int) firebaseRemoteConfig.getLong(remoteConfigMatchingInformation.dialogType);
+    final long minimumTimeBetweenTwoRecommendedPopupInDays = firebaseRemoteConfig.getLong(remoteConfigMatchingInformation.askLaterSnoozeInDays);
+
+
     if (minimumTimeBetweenTwoRecommendedPopupInDays != 0)
     {
       minimumTimeBetweenTwoRecommendedPopupInMilliseconds = minimumTimeBetweenTwoRecommendedPopupInDays * SmartAppUpdateManager.DAY_IN_MILLISECONDS;
@@ -295,13 +271,13 @@ public final class SmartAppUpdateManager
               (
                   // It's recommended and the waiting delay after a "ask later" is over
                   updatePopupInformations.updatePopupType == RECOMMENDED_UPDATE
-                      && SmartAppUpdateManager.getUpdateLaterTimestamp(defaultSharedPreferences) + minimumTimeBetweenTwoRecommendedPopupInMilliseconds > System.currentTimeMillis()
+                      && SettingsUtil.getUpdateLaterTimestamp(defaultSharedPreferences) + minimumTimeBetweenTwoRecommendedPopupInMilliseconds < System.currentTimeMillis()
               )
               ||
               (
                   // A changelog message (Informative type) has not already been seen
                   updatePopupInformations.updatePopupType == INFORMATION_ABOUT_UPDATE
-                      && SmartAppUpdateManager.getLastSeenInformativeUpdate(defaultSharedPreferences) < updatePopupInformations.versionCode
+                      && SettingsUtil.shouldDisplayInformativeUpdate(defaultSharedPreferences, updatePopupInformations.versionCode)
               )
           )
       {

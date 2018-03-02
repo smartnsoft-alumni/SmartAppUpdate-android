@@ -16,7 +16,7 @@ class MainActivity : AppCompatActivity()
     FirebaseAnalytics.getInstance(this).setUserProperty("versionCode", BuildConfig.VERSION_CODE.toString())
 
     val updatePopupManager = SmartAppUpdateManager.Builder(this, BuildConfig.DEBUG)
-//        .setUpdatePopupActivity(CustomUpdatePopupActivity::class.java)
+        .setUpdatePopupActivity(CustomUpdatePopupActivity::class.java)
         .build();
 
     updatePopupManager.fetchRemoteConfig(true)

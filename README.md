@@ -11,9 +11,9 @@ With version 1.0.0, the only way to use this library is via the Firebase Remote 
 #####Mandatory variables are :
 
 * `update_dialogType` as Integer
-	* 1 is an informative popup which will display the changelog only once
+	* 1 is a blocking update which cannot be closed without closing the app
 	* 2 is a recommended update which will be displayed every 3 days by default
-	* 3 is a blocking update which cannot be closed without closing the app
+	* 3 is an informative popup which will display the changelog only once
 * `update_title` as String
  	* This is the title of the popup
 * `update_content` as String

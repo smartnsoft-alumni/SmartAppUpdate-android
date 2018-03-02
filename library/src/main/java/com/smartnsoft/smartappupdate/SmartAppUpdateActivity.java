@@ -180,12 +180,12 @@ public class SmartAppUpdateActivity
         final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         if (updateInformation.updatePopupType == SmartAppUpdateManager.RECOMMENDED_UPDATE)
         {
-          SmartAppUpdateManager.setUpdateLaterTimestamp(sharedPreferences, System.currentTimeMillis());
+          SettingsUtil.setUpdateLaterTimestamp(sharedPreferences, System.currentTimeMillis());
         }
         else if (updateInformation.updatePopupType == SmartAppUpdateManager.INFORMATION_ABOUT_UPDATE)
         {
           // store current version information in shared_pref
-          SmartAppUpdateManager.setLastSeenInformativeUpdate(sharedPreferences, updateInformation.versionCode);
+          SettingsUtil.setLastSeenInformativeUpdate(sharedPreferences, updateInformation.versionCode);
         }
         // We can finally close this popup
         finish();

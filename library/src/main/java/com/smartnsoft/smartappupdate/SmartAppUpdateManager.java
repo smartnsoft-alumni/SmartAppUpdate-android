@@ -33,15 +33,19 @@ public final class SmartAppUpdateManager
 {
 
   @Retention(RetentionPolicy.SOURCE)
-  @IntDef({ INFORMATION_ABOUT_UPDATE, RECOMMENDED_UPDATE, BLOCKING_UPDATE })
+  @IntDef({
+      SmartAppUpdateManager.INFORMATION_ABOUT_UPDATE,
+      SmartAppUpdateManager.RECOMMENDED_UPDATE,
+      SmartAppUpdateManager.BLOCKING_UPDATE
+  })
   public @interface UpdatePopupType {}
 
 
   private static boolean isUpdateTypeKnown(long updateType)
   {
-    return updateType == INFORMATION_ABOUT_UPDATE
-        || updateType == RECOMMENDED_UPDATE
-        || updateType == BLOCKING_UPDATE;
+    return updateType == SmartAppUpdateManager.INFORMATION_ABOUT_UPDATE
+        || updateType == SmartAppUpdateManager.RECOMMENDED_UPDATE
+        || updateType == SmartAppUpdateManager.BLOCKING_UPDATE;
   }
 
   public static class Builder
@@ -49,9 +53,10 @@ public final class SmartAppUpdateManager
 
     final SmartAppUpdateManager smartAppUpdateManager;
 
-    public Builder(@NonNull Context context, boolean isInDevelopmentMode)
+    public Builder(@NonNull Context context, final int currentVersionCode, boolean isInDevelopmentMode)
     {
-      this.smartAppUpdateManager = new SmartAppUpdateManager(context, isInDevelopmentMode);
+      this.smartAppUpdateManager = new SmartAppUpdateManager(context, currentVersionCode, isInDevelopmentMode)
+      ;
     }
 
     public Builder setFallbackUpdateApplicationId(@NonNull String applicationId)
@@ -130,6 +135,8 @@ public final class SmartAppUpdateManager
 
   private final FirebaseRemoteConfig firebaseRemoteConfig;
 
+  private final int currentVersionCode;
+
   private final boolean isInDevelopmentMode;
 
   private final Context applicationContext;
@@ -146,15 +153,25 @@ public final class SmartAppUpdateManager
 
   private String fallbackUpdateApplicationId;
 
-  private SmartAppUpdateManager(@NonNull Context context, final boolean isInDevelopmentMode)
+  private UpdatePopupInformations updatePopupInformations;
+
+  private SmartAppUpdateManager(@NonNull Context context, final int currentVersionCode,
+      final boolean isInDevelopmentMode)
   {
     this.applicationContext = context.getApplicationContext();
     firebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
     this.isInDevelopmentMode = isInDevelopmentMode;
+    this.currentVersionCode = currentVersionCode;
     FirebaseRemoteConfigSettings configSettings = new FirebaseRemoteConfigSettings.Builder()
         .setDeveloperModeEnabled(isInDevelopmentMode)
         .build();
     firebaseRemoteConfig.setConfigSettings(configSettings);
+
+    final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(applicationContext);
+    if (SettingsUtil.getLastSeenInformativeUpdate(sharedPreferences) == -1)
+    {
+      SettingsUtil.setLastSeenInformativeUpdate(sharedPreferences, currentVersionCode);
+    }
   }
 
   public void setRemoteConfigMatchInformation(RemoteConfigMatchingInformation remoteConfigMatchInformation)
@@ -217,6 +234,7 @@ public final class SmartAppUpdateManager
   private void onUpdateSucessful(final boolean shouldShowPopupAfterFetch)
   {
     firebaseRemoteConfig.activateFetched();
+    createUpdateInformations();
     if (shouldShowPopupAfterFetch)
     {
       createAndDisplayPopup();
@@ -232,10 +250,9 @@ public final class SmartAppUpdateManager
     }
   }
 
-  @Nullable
-  public final Intent createPopupIntent()
+  private void createUpdateInformations()
   {
-    final UpdatePopupInformations updatePopupInformations = new UpdatePopupInformations();
+    updatePopupInformations = new UpdatePopupInformations();
 
     updatePopupInformations.title = firebaseRemoteConfig.getString(remoteConfigMatchingInformation.popupTitle);
     updatePopupInformations.imageURL = firebaseRemoteConfig.getString(remoteConfigMatchingInformation.imageURL);
@@ -250,10 +267,18 @@ public final class SmartAppUpdateManager
     updatePopupInformations.updatePopupType = (int) firebaseRemoteConfig.getLong(remoteConfigMatchingInformation.dialogType);
     final long minimumTimeBetweenTwoRecommendedPopupInDays = firebaseRemoteConfig.getLong(remoteConfigMatchingInformation.askLaterSnoozeInDays);
 
-
     if (minimumTimeBetweenTwoRecommendedPopupInDays != 0)
     {
       minimumTimeBetweenTwoRecommendedPopupInMilliseconds = minimumTimeBetweenTwoRecommendedPopupInDays * SmartAppUpdateManager.DAY_IN_MILLISECONDS;
+    }
+  }
+
+  @Nullable
+  public final Intent createPopupIntent()
+  {
+    if (updatePopupInformations == null)
+    {
+      return null;
     }
 
     final boolean isUpdateTypeKnown = isUpdateTypeKnown(updatePopupInformations.updatePopupType);
@@ -266,19 +291,11 @@ public final class SmartAppUpdateManager
     {
       final SharedPreferences defaultSharedPreferences = PreferenceManager.getDefaultSharedPreferences(applicationContext);
       if (
-          updatePopupInformations.updatePopupType == BLOCKING_UPDATE // Forced to launch the popup
+          isBlockingUpdate() // Forced to launch the popup
               ||
-              (
-                  // It's recommended and the waiting delay after a "ask later" is over
-                  updatePopupInformations.updatePopupType == RECOMMENDED_UPDATE
-                      && SettingsUtil.getUpdateLaterTimestamp(defaultSharedPreferences) + minimumTimeBetweenTwoRecommendedPopupInMilliseconds < System.currentTimeMillis()
-              )
+              isRecommendedUpdate(defaultSharedPreferences)
               ||
-              (
-                  // A changelog message (Informative type) has not already been seen
-                  updatePopupInformations.updatePopupType == INFORMATION_ABOUT_UPDATE
-                      && SettingsUtil.shouldDisplayInformativeUpdate(defaultSharedPreferences, updatePopupInformations.versionCode)
-              )
+              isInformativeUpdate(defaultSharedPreferences)
           )
       {
         final Intent intent = new Intent(applicationContext, updatePopupActivityClass);
@@ -289,6 +306,32 @@ public final class SmartAppUpdateManager
     }
 
     return null;
+  }
+
+  public boolean isBlockingUpdate()
+  {
+    return updatePopupInformations != null
+        && updatePopupInformations.updatePopupType == SmartAppUpdateManager.BLOCKING_UPDATE
+        && currentVersionCode < updatePopupInformations.versionCode;
+  }
+
+  public boolean isInformativeUpdate(final SharedPreferences defaultSharedPreferences)
+  {
+    return updatePopupInformations != null
+        && updatePopupInformations.versionCode == currentVersionCode
+        && updatePopupInformations.updatePopupType == SmartAppUpdateManager.INFORMATION_ABOUT_UPDATE
+        // A changelog message (Informative type) has not already been seen
+        && SettingsUtil.shouldDisplayInformativeUpdate(defaultSharedPreferences, currentVersionCode, updatePopupInformations.versionCode);
+  }
+
+  public boolean isRecommendedUpdate(final SharedPreferences defaultSharedPreferences)
+  {
+    return
+        updatePopupInformations != null
+            && currentVersionCode < updatePopupInformations.versionCode
+            // It's recommended and the waiting delay after a "ask later" is over
+            && updatePopupInformations.updatePopupType == SmartAppUpdateManager.RECOMMENDED_UPDATE
+            && SettingsUtil.getUpdateLaterTimestamp(defaultSharedPreferences) + minimumTimeBetweenTwoRecommendedPopupInMilliseconds < System.currentTimeMillis();
   }
 
   @WorkerThread
@@ -356,6 +399,7 @@ public final class SmartAppUpdateManager
     if (firebaseRemoteConfigInfo.getLastFetchStatus() == FirebaseRemoteConfig.LAST_FETCH_STATUS_SUCCESS
         && firebaseRemoteConfigInfo.getFetchTimeMillis() >= System.currentTimeMillis() - maxConfigCacheDurationInMillisecond)
     {
+      createUpdateInformations();
       createAndDisplayPopup();
     }
     else if (firebaseRemoteConfigInfo.getLastFetchStatus() != FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED)

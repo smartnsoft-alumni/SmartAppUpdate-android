@@ -15,7 +15,7 @@ class MainActivity : AppCompatActivity()
 
     FirebaseAnalytics.getInstance(this).setUserProperty("versionCode", BuildConfig.VERSION_CODE.toString())
 
-    val updatePopupManager = SmartAppUpdateManager.Builder(this, BuildConfig.DEBUG)
+    val updatePopupManager = SmartAppUpdateManager.Builder(this, BuildConfig.VERSION_CODE,BuildConfig.DEBUG)
         .setUpdatePopupActivity(CustomUpdatePopupActivity::class.java)
         .build();
 

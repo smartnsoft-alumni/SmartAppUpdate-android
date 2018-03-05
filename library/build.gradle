@@ -9,7 +9,7 @@ android {
     minSdkVersion rootProject.minSdkVersion
     targetSdkVersion rootProject.compileSdkVersion
     versionCode 1
-    versionName "1.0-beta2-SNAPSHOT"
+    versionName "1.0-beta3-SNAPSHOT"
     resourcePrefix 'smartappupdate_'
     consumerProguardFiles 'proguard-rules.pro'
   }

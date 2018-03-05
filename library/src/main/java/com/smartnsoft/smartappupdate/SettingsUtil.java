@@ -31,6 +31,7 @@ public final class SettingsUtil
   }
 
   public static boolean shouldDisplayInformativeUpdate(@NonNull SharedPreferences preferences,
+      int currentVersionCode,
       long versionCodeFromConfig)
   {
     if (preferences.contains(SettingsUtil.LAST_SEEN_VERSION_UPDATE_INFORMATION_PREFERENCE_KEY))
@@ -40,7 +41,7 @@ public final class SettingsUtil
     }
     else
     {
-      setLastSeenInformativeUpdate(preferences, versionCodeFromConfig);
+      setLastSeenInformativeUpdate(preferences, currentVersionCode);
       return false;
     }
   }

@@ -92,12 +92,6 @@ public final class CustomUpdatePopupActivity
   }
 
   @Override
-  public long getNumberOfReminderAlreadySeen()
-  {
-    return 0;
-  }
-
-  @Override
   public String getDateForAnalytics()
   {
     return null;

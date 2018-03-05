@@ -41,6 +41,8 @@ public abstract class AbstractSmartAppUpdateActivity
 
   protected UpdatePopupInformations updateInformation;
 
+  protected SharedPreferences preferences;
+
   @Override
   protected void onCreate(Bundle savedInstanceState)
   {
@@ -60,17 +62,19 @@ public abstract class AbstractSmartAppUpdateActivity
       }
     }
 
+    preferences = PreferenceManager.getDefaultSharedPreferences(this);
+
     switch (updateInformation.updatePopupType)
     {
       case SmartAppUpdateManager.BLOCKING_UPDATE:
-        SettingsUtil.increaseBlockingScreenDisplayCount(PreferenceManager.getDefaultSharedPreferences(this));
+        SettingsUtil.increaseBlockingScreenDisplayCount(preferences);
         sendBlockingUpdateDisplayed();
         break;
       case SmartAppUpdateManager.INFORMATION_ABOUT_UPDATE:
         sendUpdateInfoDisplayed();
         break;
       case SmartAppUpdateManager.RECOMMENDED_UPDATE:
-        SettingsUtil.increaseRecommendedScreenDisplayCount(PreferenceManager.getDefaultSharedPreferences(this));
+        SettingsUtil.increaseRecommendedScreenDisplayCount(preferences);
         sendRecomendedUpdateDisplayed();
         break;
     }
@@ -159,13 +163,13 @@ public abstract class AbstractSmartAppUpdateActivity
     else if (updateInformation.updatePopupType == SmartAppUpdateManager.RECOMMENDED_UPDATE)
     {
       openPlayStore();
-      SettingsUtil.increaseActionOnRecommendedScreenDisplayCount(PreferenceManager.getDefaultSharedPreferences(this));
+      SettingsUtil.increaseActionOnRecommendedScreenDisplayCount(preferences);
       sendRecommendedActionButtonEvent();
       finish();
     }
     else if (updateInformation.updatePopupType == SmartAppUpdateManager.BLOCKING_UPDATE)
     {
-      SettingsUtil.increaseActionOnBlockingScreenDisplayCount(PreferenceManager.getDefaultSharedPreferences(this));
+      SettingsUtil.increaseActionOnBlockingScreenDisplayCount(preferences);
       sendBlockingActionButtonEvent();
     }
   }
@@ -201,16 +205,15 @@ public abstract class AbstractSmartAppUpdateActivity
     {
       if (updateInformation.updatePopupType != SmartAppUpdateManager.BLOCKING_UPDATE)
       {
-        final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         if (updateInformation.updatePopupType == SmartAppUpdateManager.RECOMMENDED_UPDATE)
         {
-          SettingsUtil.setUpdateLaterTimestamp(sharedPreferences, System.currentTimeMillis());
+          SettingsUtil.setUpdateLaterTimestamp(preferences, System.currentTimeMillis());
           sendAskLaterEvent();
         }
         else if (updateInformation.updatePopupType == SmartAppUpdateManager.INFORMATION_ABOUT_UPDATE)
         {
           // store current version information in shared_pref
-          SettingsUtil.setLastSeenInformativeUpdate(sharedPreferences, updateInformation.versionCode);
+          SettingsUtil.setLastSeenInformativeUpdate(preferences, updateInformation.versionCode);
         }
         // We can finally close this popup
         finish();

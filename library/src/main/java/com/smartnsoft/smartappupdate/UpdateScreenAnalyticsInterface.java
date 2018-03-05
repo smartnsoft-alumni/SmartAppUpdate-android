@@ -36,8 +36,6 @@ public interface UpdateScreenAnalyticsInterface
 
   int getVersionCode();
 
-  long getNumberOfReminderAlreadySeen();
-
   String getDateForAnalytics();
 
   Bundle generateAnalyticsExtraInfos();

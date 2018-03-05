@@ -66,12 +66,6 @@ public final class SmartAppUpdateActivity
   }
 
   @Override
-  public long getNumberOfReminderAlreadySeen()
-  {
-    return 0;
-  }
-
-  @Override
   public String getDateForAnalytics()
   {
     return null;

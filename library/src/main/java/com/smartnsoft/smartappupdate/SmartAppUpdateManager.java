@@ -65,7 +65,7 @@ public final class SmartAppUpdateManager
       return this;
     }
 
-    public Builder setUpdatePopupActivity(@NonNull Class<? extends SmartAppUpdateActivity> updatePopupActivity)
+    public Builder setUpdatePopupActivity(@NonNull Class<? extends AbstractSmartAppUpdateActivity> updatePopupActivity)
     {
       smartAppUpdateManager.setUpdatePopupActivityClass(updatePopupActivity);
       return this;
@@ -141,7 +141,7 @@ public final class SmartAppUpdateManager
 
   private final Context applicationContext;
 
-  private Class<? extends SmartAppUpdateActivity> updatePopupActivityClass = SmartAppUpdateActivity.class;
+  private Class<? extends AbstractSmartAppUpdateActivity> updatePopupActivityClass = SmartAppUpdateActivity.class;
 
   private RemoteConfigMatchingInformation remoteConfigMatchingInformation = new RemoteConfigMatchingInformation();
 
@@ -185,7 +185,7 @@ public final class SmartAppUpdateManager
   }
 
   void setUpdatePopupActivityClass(
-      Class<? extends SmartAppUpdateActivity> updatePopupActivityClass)
+      Class<? extends AbstractSmartAppUpdateActivity> updatePopupActivityClass)
   {
     this.updatePopupActivityClass = updatePopupActivityClass;
   }
@@ -270,6 +270,11 @@ public final class SmartAppUpdateManager
     if (minimumTimeBetweenTwoRecommendedPopupInDays != 0)
     {
       minimumTimeBetweenTwoRecommendedPopupInMilliseconds = minimumTimeBetweenTwoRecommendedPopupInDays * SmartAppUpdateManager.DAY_IN_MILLISECONDS;
+    }
+
+    if (updatePopupInformations.versionCode == currentVersionCode)
+    {
+      SettingsUtil.resetAnalyticsPreferences(PreferenceManager.getDefaultSharedPreferences(applicationContext));
     }
   }
 

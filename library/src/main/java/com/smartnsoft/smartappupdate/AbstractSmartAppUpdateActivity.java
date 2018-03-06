@@ -169,6 +169,7 @@ public abstract class AbstractSmartAppUpdateActivity
     }
     else if (updateInformation.updatePopupType == SmartAppUpdateManager.BLOCKING_UPDATE)
     {
+      openPlayStore();
       SettingsUtil.increaseActionOnBlockingScreenDisplayCount(preferences);
       sendBlockingActionButtonEvent();
     }

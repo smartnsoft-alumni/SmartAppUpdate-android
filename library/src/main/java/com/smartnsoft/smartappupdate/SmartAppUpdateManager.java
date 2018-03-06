@@ -274,7 +274,9 @@ public final class SmartAppUpdateManager
 
     if (updatePopupInformations.versionCode == currentVersionCode)
     {
-      SettingsUtil.resetAnalyticsPreferences(PreferenceManager.getDefaultSharedPreferences(applicationContext));
+      final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(applicationContext);
+      SettingsUtil.resetAnalyticsPreferences(sharedPreferences);
+      SettingsUtil.setUpdateLaterTimestamp(sharedPreferences, -1);
     }
   }
 

@@ -165,6 +165,8 @@ public abstract class AbstractSmartAppUpdateActivity
       openPlayStore();
       SettingsUtil.increaseActionOnRecommendedScreenDisplayCount(preferences);
       sendRecommendedActionButtonEvent();
+      //NOTE: We must store this timestamp because user can click without really updating
+      SettingsUtil.setUpdateLaterTimestamp(preferences, System.currentTimeMillis());
       finish();
     }
     else if (updateInformation.updatePopupType == SmartAppUpdateManager.BLOCKING_UPDATE)

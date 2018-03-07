@@ -71,10 +71,14 @@ public abstract class AbstractSmartAppUpdateActivity
         sendBlockingUpdateDisplayed();
         break;
       case SmartAppUpdateManager.INFORMATION_ABOUT_UPDATE:
+        // store current version information in shared_pref
+        SettingsUtil.setLastSeenInformativeUpdate(preferences, updateInformation.versionCode);
         sendUpdateInfoDisplayed();
         break;
       case SmartAppUpdateManager.RECOMMENDED_UPDATE:
         SettingsUtil.increaseRecommendedScreenDisplayCount(preferences);
+        //NOTE: We must store this timestamp because user can click without really updating
+        SettingsUtil.setUpdateLaterTimestamp(preferences, System.currentTimeMillis());
         sendRecomendedUpdateDisplayed();
         break;
     }
@@ -165,8 +169,6 @@ public abstract class AbstractSmartAppUpdateActivity
       openPlayStore();
       SettingsUtil.increaseActionOnRecommendedScreenDisplayCount(preferences);
       sendRecommendedActionButtonEvent();
-      //NOTE: We must store this timestamp because user can click without really updating
-      SettingsUtil.setUpdateLaterTimestamp(preferences, System.currentTimeMillis());
       finish();
     }
     else if (updateInformation.updatePopupType == SmartAppUpdateManager.BLOCKING_UPDATE)
@@ -210,13 +212,7 @@ public abstract class AbstractSmartAppUpdateActivity
       {
         if (updateInformation.updatePopupType == SmartAppUpdateManager.RECOMMENDED_UPDATE)
         {
-          SettingsUtil.setUpdateLaterTimestamp(preferences, System.currentTimeMillis());
           sendAskLaterEvent();
-        }
-        else if (updateInformation.updatePopupType == SmartAppUpdateManager.INFORMATION_ABOUT_UPDATE)
-        {
-          // store current version information in shared_pref
-          SettingsUtil.setLastSeenInformativeUpdate(preferences, updateInformation.versionCode);
         }
         // We can finally close this popup
         finish();

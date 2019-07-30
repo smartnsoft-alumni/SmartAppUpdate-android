@@ -3,7 +3,7 @@ package com.smartnsoft.smartappupdate;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 /**
  * @author Adrien Vitti

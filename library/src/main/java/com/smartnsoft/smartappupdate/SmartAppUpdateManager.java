@@ -7,14 +7,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-import android.support.annotation.AnyThread;
-import android.support.annotation.IntDef;
-import android.support.annotation.IntRange;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.WorkerThread;
 import android.text.TextUtils;
 import android.util.Log;
+import androidx.annotation.AnyThread;
+import androidx.annotation.IntDef;
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.WorkerThread;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -162,10 +162,13 @@ public final class SmartAppUpdateManager
     firebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
     this.isInDevelopmentMode = isInDevelopmentMode;
     this.currentVersionCode = currentVersionCode;
-    FirebaseRemoteConfigSettings configSettings = new FirebaseRemoteConfigSettings.Builder()
-        .setDeveloperModeEnabled(isInDevelopmentMode)
-        .build();
-    firebaseRemoteConfig.setConfigSettings(configSettings);
+    final FirebaseRemoteConfigSettings.Builder configBuilder = new FirebaseRemoteConfigSettings.Builder();
+    if (isInDevelopmentMode)
+    {
+      configBuilder.setMinimumFetchIntervalInSeconds(0);
+    }
+    final FirebaseRemoteConfigSettings configSettings = configBuilder.build();
+    firebaseRemoteConfig.setConfigSettingsAsync(configSettings);
 
     final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(applicationContext);
     if (SettingsUtil.getLastSeenInformativeUpdate(sharedPreferences) == -1)
@@ -213,9 +216,9 @@ public final class SmartAppUpdateManager
       long cacheExpiration = 3600; // 1 hour in seconds.
       // If your app is using developer mode, cacheExpiration is set to 0, so each fetch will
       // retrieve values from the service.
-      if (firebaseRemoteConfig.getInfo().getConfigSettings().isDeveloperModeEnabled())
+      if (isInDevelopmentMode)
       {
-        cacheExpiration = 0;
+        cacheExpiration = firebaseRemoteConfig.getInfo().getConfigSettings().getMinimumFetchIntervalInSeconds();
       }
       firebaseRemoteConfig.fetch(cacheExpiration).addOnCompleteListener(new OnCompleteListener<Void>()
       {
@@ -233,7 +236,7 @@ public final class SmartAppUpdateManager
 
   private void onUpdateSucessful(final boolean shouldShowPopupAfterFetch)
   {
-    firebaseRemoteConfig.activateFetched();
+    firebaseRemoteConfig.activate();
     createUpdateInformations();
     if (shouldShowPopupAfterFetch)
     {
@@ -303,7 +306,7 @@ public final class SmartAppUpdateManager
               isRecommendedUpdate(defaultSharedPreferences)
               ||
               isInformativeUpdate(defaultSharedPreferences)
-          )
+      )
       {
         final Intent intent = new Intent(applicationContext, updatePopupActivityClass);
         intent.putExtra(SmartAppUpdateManager.UPDATE_INFORMATION_EXTRA, updatePopupInformations);
@@ -350,9 +353,9 @@ public final class SmartAppUpdateManager
       long cacheExpiration = 3600; // 1 hour in seconds.
       // If your app is using developer mode, cacheExpiration is set to 0, so each fetch will
       // retrieve values from the service.
-      if (firebaseRemoteConfig.getInfo().getConfigSettings().isDeveloperModeEnabled())
+      if (isInDevelopmentMode)
       {
-        cacheExpiration = 0;
+        cacheExpiration = firebaseRemoteConfig.getInfo().getConfigSettings().getMinimumFetchIntervalInSeconds();
       }
 
       final long startTime = System.currentTimeMillis();
@@ -411,7 +414,7 @@ public final class SmartAppUpdateManager
     }
     else if (firebaseRemoteConfigInfo.getLastFetchStatus() != FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED)
     {
-      // need to refetch
+      // need to re-fetch
       fetchRemoteConfig(true);
     }
   }

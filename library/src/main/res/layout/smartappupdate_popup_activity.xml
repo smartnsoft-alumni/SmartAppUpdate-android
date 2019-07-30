@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout
+<androidx.constraintlayout.widget.ConstraintLayout
   xmlns:android="http://schemas.android.com/apk/res/android"
   xmlns:tools="http://schemas.android.com/tools"
   xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -12,7 +12,7 @@
     style="@style/smartappupdate_CardStyle"
   >
 
-    <android.support.constraint.ConstraintLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
       android:orientation="vertical"
       android:layout_width="match_parent"
       android:layout_height="match_parent"
@@ -158,6 +158,6 @@
         app:layout_constraintLeft_toLeftOf="@id/actionButton"
         app:layout_constraintRight_toRightOf="@id/actionButton"
       />
-    </android.support.constraint.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
   </RelativeLayout>
-</android.support.constraint.ConstraintLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

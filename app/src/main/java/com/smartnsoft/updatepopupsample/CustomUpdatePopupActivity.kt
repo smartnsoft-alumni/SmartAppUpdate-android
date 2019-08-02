@@ -21,8 +21,10 @@ class CustomUpdatePopupActivity : AbstractSmartAppUpdateActivity()
     {
       return
     }
-    image.visibility = View.VISIBLE
-    Glide.with(this).load(imageURLFromRemoteConfig).into(image)
+    image?.apply {
+      image?.visibility = View.VISIBLE
+      Glide.with(this).load(imageURLFromRemoteConfig).into(this)
+    }
   }
 
   override fun setContent(contentFromRemoteConfig: String?)
@@ -31,7 +33,7 @@ class CustomUpdatePopupActivity : AbstractSmartAppUpdateActivity()
     {
       return
     }
-    paragraph.text = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+    paragraph?.text = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
     {
       Html.fromHtml(contentFromRemoteConfig, Html.FROM_HTML_MODE_LEGACY)
     }

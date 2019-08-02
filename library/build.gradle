@@ -152,15 +152,10 @@ uploadArchives
   {
     mavenDeployer
     {
-      repository(url: findProperty("nexusReleaseUrl") ?: "")
+      repository(url: "https://api.bintray.com/maven/smartnsoft/maven/" + rootProject.libraryName + "/;publish=1")
       {
-        authentication(userName: findProperty("nexusUsername") ?: "", password: findProperty("nexusPassword") ?: "")
+        authentication(userName: findProperty("bintrayUsername") ?: "", password: findProperty("bintrayKey") ?: "")
       }
-
-      //      repository(url: "https://api.bintray.com/maven/smartnsoft/maven/analytics/;publish=1")
-      //      {
-      //        authentication(userName: findProperty("bintrayUsername") ?: "", password: findProperty("bintrayKey") ?: "")
-      //      }
 
       snapshotRepository(url: nexusSnapshotUrl)
       {

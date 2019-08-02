@@ -257,25 +257,25 @@ public final class SmartAppUpdateManager
   {
     updatePopupInformations = new UpdatePopupInformations();
 
-    updatePopupInformations.title = firebaseRemoteConfig.getString(remoteConfigMatchingInformation.popupTitle);
-    updatePopupInformations.imageURL = firebaseRemoteConfig.getString(remoteConfigMatchingInformation.imageURL);
-    updatePopupInformations.updateContent = firebaseRemoteConfig.getString(remoteConfigMatchingInformation.updateContent);
-    updatePopupInformations.changelogContent = firebaseRemoteConfig.getString(remoteConfigMatchingInformation.changelogContent);
-    updatePopupInformations.actionButtonLabel = firebaseRemoteConfig.getString(remoteConfigMatchingInformation.actionButtonText);
-    updatePopupInformations.deepLink = firebaseRemoteConfig.getString(remoteConfigMatchingInformation.updateActionDeeplink);
+    updatePopupInformations.setTitle(firebaseRemoteConfig.getString(remoteConfigMatchingInformation.getPopupTitle()));
+    updatePopupInformations.setImageURL(firebaseRemoteConfig.getString(remoteConfigMatchingInformation.getImageURL()));
+    updatePopupInformations.setUpdateContent(firebaseRemoteConfig.getString(remoteConfigMatchingInformation.getUpdateContent()));
+    updatePopupInformations.setChangelogContent(firebaseRemoteConfig.getString(remoteConfigMatchingInformation.getChangelogContent()));
+    updatePopupInformations.setActionButtonLabel(firebaseRemoteConfig.getString(remoteConfigMatchingInformation.getActionButtonText()));
+    updatePopupInformations.setDeepLink(firebaseRemoteConfig.getString(remoteConfigMatchingInformation.getUpdateActionDeeplink()));
 
-    final String packageNameFromRemoteConfig = firebaseRemoteConfig.getString(remoteConfigMatchingInformation.packageName);
-    updatePopupInformations.packageName = TextUtils.isEmpty(packageNameFromRemoteConfig) ? fallbackUpdateApplicationId : packageNameFromRemoteConfig;
-    updatePopupInformations.versionCode = firebaseRemoteConfig.getLong(remoteConfigMatchingInformation.currentVersionCode);
-    updatePopupInformations.updatePopupType = (int) firebaseRemoteConfig.getLong(remoteConfigMatchingInformation.dialogType);
-    final long minimumTimeBetweenTwoRecommendedPopupInDays = firebaseRemoteConfig.getLong(remoteConfigMatchingInformation.askLaterSnoozeInDays);
+    final String packageNameFromRemoteConfig = firebaseRemoteConfig.getString(remoteConfigMatchingInformation.getPackageName());
+    updatePopupInformations.setPackageName(TextUtils.isEmpty(packageNameFromRemoteConfig) ? fallbackUpdateApplicationId : packageNameFromRemoteConfig);
+    updatePopupInformations.setVersionCode(firebaseRemoteConfig.getLong(remoteConfigMatchingInformation.getCurrentVersionCode()));
+    updatePopupInformations.setUpdatePopupType((int) firebaseRemoteConfig.getLong(remoteConfigMatchingInformation.getDialogType()));
+    final long minimumTimeBetweenTwoRecommendedPopupInDays = firebaseRemoteConfig.getLong(remoteConfigMatchingInformation.getAskLaterSnoozeInDays());
 
     if (minimumTimeBetweenTwoRecommendedPopupInDays != 0)
     {
       minimumTimeBetweenTwoRecommendedPopupInMilliseconds = minimumTimeBetweenTwoRecommendedPopupInDays * SmartAppUpdateManager.DAY_IN_MILLISECONDS;
     }
 
-    if (updatePopupInformations.versionCode == currentVersionCode)
+    if (updatePopupInformations.getVersionCode() == currentVersionCode)
     {
       final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(applicationContext);
       SettingsUtil.resetAnalyticsPreferences(sharedPreferences);
@@ -291,10 +291,10 @@ public final class SmartAppUpdateManager
       return null;
     }
 
-    final boolean isUpdateTypeKnown = isUpdateTypeKnown(updatePopupInformations.updatePopupType);
+    final boolean isUpdateTypeKnown = isUpdateTypeKnown(updatePopupInformations.getUpdatePopupType());
     if (isInDevelopmentMode)
     {
-      Log.d(TAG, "UpdateType=" + updatePopupInformations.updatePopupType + " which can" + (isUpdateTypeKnown ? "" : "not ") + " be processed");
+      Log.d(TAG, "UpdateType=" + updatePopupInformations.getUpdatePopupType() + " which can" + (isUpdateTypeKnown ? "" : "not ") + " be processed");
     }
 
     if (isUpdateTypeKnown)
@@ -321,26 +321,26 @@ public final class SmartAppUpdateManager
   public boolean isBlockingUpdate()
   {
     return updatePopupInformations != null
-        && updatePopupInformations.updatePopupType == SmartAppUpdateManager.BLOCKING_UPDATE
-        && currentVersionCode < updatePopupInformations.versionCode;
+        && updatePopupInformations.getUpdatePopupType() == SmartAppUpdateManager.BLOCKING_UPDATE
+        && currentVersionCode < updatePopupInformations.getVersionCode();
   }
 
   public boolean isInformativeUpdate(final SharedPreferences defaultSharedPreferences)
   {
     return updatePopupInformations != null
-        && updatePopupInformations.versionCode == currentVersionCode
-        && updatePopupInformations.updatePopupType == SmartAppUpdateManager.INFORMATION_ABOUT_UPDATE
+        && updatePopupInformations.getVersionCode() == currentVersionCode
+        && updatePopupInformations.getUpdatePopupType() == SmartAppUpdateManager.INFORMATION_ABOUT_UPDATE
         // A changelog message (Informative type) has not already been seen
-        && SettingsUtil.shouldDisplayInformativeUpdate(defaultSharedPreferences, currentVersionCode, updatePopupInformations.versionCode);
+        && SettingsUtil.shouldDisplayInformativeUpdate(defaultSharedPreferences, currentVersionCode, updatePopupInformations.getVersionCode());
   }
 
   public boolean isRecommendedUpdate(final SharedPreferences defaultSharedPreferences)
   {
     return
         updatePopupInformations != null
-            && currentVersionCode < updatePopupInformations.versionCode
+            && currentVersionCode < updatePopupInformations.getVersionCode()
             // It's recommended and the waiting delay after a "ask later" is over
-            && updatePopupInformations.updatePopupType == SmartAppUpdateManager.RECOMMENDED_UPDATE
+            && updatePopupInformations.getUpdatePopupType() == SmartAppUpdateManager.RECOMMENDED_UPDATE
             && SettingsUtil.getUpdateLaterTimestamp(defaultSharedPreferences) + minimumTimeBetweenTwoRecommendedPopupInMilliseconds < System.currentTimeMillis();
   }
 
